@@ -18,11 +18,19 @@ const types = {
 };
 
 const server = http.createServer((req, res) => {
-  const urlPath = decodeURIComponent(req.url.split("?")[0]);
+  let urlPath;
+  try {
+    urlPath = decodeURIComponent(req.url.split("?")[0]);
+  } catch {
+    res.writeHead(400);
+    res.end("Bad request");
+    return;
+  }
   const requested = urlPath === "/" ? "/index.html" : urlPath;
   let filePath = path.normalize(path.join(root, requested));
 
-  if (!filePath.startsWith(root)) {
+  const relative = path.relative(root, filePath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
@@ -53,5 +61,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Impact Global Agency listo en http://localhost:${port}`);
+  console.log(`Impact Global Agency listo en http://localhost:${server.address().port}`);
 });
