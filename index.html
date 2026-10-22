@@ -27,8 +27,11 @@
     --muted:#627184;
     --line:#dce6ef;
     --whatsapp:#25d366;
+    --header-offset:143px;
+    --strip-height:36px;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   html{scroll-behavior:smooth}
   body{margin:0;font-family:Montserrat,system-ui,sans-serif;background:var(--white);color:var(--ink);line-height:1.5}
   h1,h2,h3,p{margin:0}
@@ -44,12 +47,12 @@
   .lang-switch{margin-right:auto;display:flex;align-items:center;gap:6px}
   .lang-switch button{width:38px;height:24px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:transparent;color:#fff;font-size:11px;font-weight:900;cursor:pointer}
   .lang-switch button.active{background:#fff;color:var(--navy)}
-  header{position:sticky;top:36px;z-index:45;background:#fff;border-bottom:3px solid var(--navy);box-shadow:0 12px 32px rgba(7,18,40,.08)}
+  header{position:sticky;top:var(--strip-height);z-index:45;background:#fff;border-bottom:3px solid var(--navy);box-shadow:0 12px 32px rgba(7,18,40,.08)}
   nav{height:104px;display:flex;align-items:center;justify-content:space-between;gap:28px}
   .logo-mark{display:inline-flex;align-items:center}
   .logo-img{display:block;width:255px;height:auto}
-  header .logo-mark{width:330px}
-  header .logo-img{width:330px;max-width:100%;height:auto}
+  header .logo-mark{width:270px;flex-shrink:0}
+  header .logo-img{width:270px;max-width:100%;height:auto}
   .nav-links{display:flex;align-items:center;gap:10px;color:var(--navy);font-size:14px;font-weight:900}
   .nav-links a{min-width:92px;min-height:48px;padding:8px 12px;border:1px solid transparent;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.12;background:transparent;transition:color .25s ease,background .25s ease,transform .25s ease}
   .nav-links a:nth-child(-n+2){font-size:15px}
@@ -79,20 +82,20 @@
   .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--cyan);font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
   .eyebrow::before{content:"";width:28px;height:3px;border-radius:999px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--gold))}
 
-  .hero{min-height:calc(100svh - 140px);display:flex;align-items:center;padding:56px 0 72px;background:var(--navy);color:#fff;position:relative;overflow:hidden;text-align:center}
+  .hero{min-height:calc(100svh - var(--header-offset));display:flex;align-items:center;padding:56px 0 72px;background:var(--navy);color:#fff;position:relative;overflow:hidden;text-align:center}
   .hero::after{display:none}
   .hero .wrap{position:relative;z-index:1}
   .hero-brand{display:inline-flex;align-items:center;justify-content:center;padding:8px 0}
   .hero-brand img{width:min(520px,72vw);height:auto;filter:drop-shadow(0 18px 34px rgba(0,0,0,.3))}
-  .hero h1{max-width:860px;margin:28px auto 0;font-size:clamp(36px,5vw,62px);line-height:1.03}
-  .hero p{max-width:760px;margin:18px auto 0;color:#dbe9f5;font-size:clamp(17px,2vw,21px);font-weight:500}
+  .hero h1{max-width:860px;margin:28px auto 0;font-size:52px;line-height:1.08}
+  .hero p{max-width:760px;margin:18px auto 0;color:#dbe9f5;font-size:20px;font-weight:500}
   .hero-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:32px}
   .trust-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:38px auto 0;max-width:920px}
   .trust-item{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);border-radius:10px;padding:16px}
   .trust-item b{display:block;color:#fff;font-size:18px}
   .trust-item span{display:block;margin-top:3px;color:#b9c7d6;font-size:12px;font-weight:700;text-transform:uppercase}
 
-  section{padding:78px 0;scroll-margin-top:148px}
+  section{padding:78px 0;scroll-margin-top:calc(var(--header-offset) + 16px)}
   .section-head{display:flex;align-items:end;justify-content:space-between;gap:26px;margin-bottom:30px}
   .section-head h2{margin-top:8px;font-size:clamp(30px,4vw,48px);line-height:1.08;color:var(--navy)}
   .section-head p{max-width:470px;color:var(--muted);font-weight:500}
@@ -167,7 +170,7 @@
 
   .form-section{background:#fff}
   .form-layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:28px;align-items:start}
-  .form-note{position:sticky;top:150px;background:var(--navy);color:#fff;border-radius:12px;padding:26px;box-shadow:0 18px 50px rgba(13,27,61,.16)}
+  .form-note{position:sticky;top:calc(var(--header-offset) + 16px);background:var(--navy);color:#fff;border-radius:12px;padding:26px;box-shadow:0 18px 50px rgba(13,27,61,.16)}
   .form-note h2{margin-top:10px;font-size:32px;line-height:1.08}
   .form-note p{margin-top:12px;color:#c8d5e3;font-weight:500}
   .progress{height:8px;margin-top:20px;background:rgba(255,255,255,.18);border-radius:999px;overflow:hidden}
@@ -210,7 +213,7 @@
   .foot{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap}
   .foot-links{display:flex;gap:18px;flex-wrap:wrap}
 
-  @media (max-width:940px){
+  @media (max-width:1200px){
     nav{display:grid;grid-template-columns:auto 1fr auto}
     .desktop-only{display:none}
     .mobile-toggle{display:inline-block;justify-self:end}
@@ -228,15 +231,19 @@
     .logo-img{width:205px}
     header .logo-mark{width:230px}
     header .logo-img{width:230px}
-    .hero{min-height:calc(100svh - 118px);padding:46px 0 58px}
+    .hero{min-height:calc(100svh - var(--header-offset));padding:46px 0 58px}
+    .hero h1{font-size:34px}
+    .hero p{font-size:17px}
     .hero-brand{padding:4px 0;width:100%}
     .hero-brand img{width:min(300px,82vw)}
-    section{padding:56px 0;scroll-margin-top:126px}
+    section{padding:56px 0}
     .grid,.choices{grid-template-columns:1fr}
     .top-strip .wrap{padding:0 14px;gap:16px;font-size:12px}
     .top-strip a + a{padding-left:16px}
     .lang-switch button{width:34px}
   }
+  @media (max-height:600px){.form-note{position:static}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
 </style>
 </head>
 <body>
@@ -310,9 +317,8 @@
       <div class="section-head">
         <div>
           <div class="eyebrow" data-i18n="servicesEyebrow">Servicios</div>
-          <h2 data-i18n="servicesTitle">Te ayudamos a encontrar tu mejor camino.</h2>
+          <h2 data-i18n="servicesTitle">Te acompañamos a diseñar tu mejor plan para estudiar en el exterior.</h2>
         </div>
-        <p data-i18n="servicesIntro">Te acompañamos a diseñar tu mejor plan para estudiar en el exterior.</p>
       </div>
       <div class="service-grid">
         <article class="service-card">
@@ -562,16 +568,16 @@
       <a href="#proceso" data-i18n="footerProcess">Proceso</a>
       <a href="#faq" data-i18n="faqEyebrow">Preguntas frecuentes</a>
       <a href="/portal" data-i18n="navPortal">Portal</a>
-      <a href="#casos" data-i18n="navCases">Casos de Éxito</a>
+      <a href="#casos" data-ui="experience">Experiencia</a>
       <a href="#evaluacion" data-i18n="navEvaluation">Evaluación Gratuita</a>
       <a href="https://www.instagram.com/impact_global_agency?igsi=MTdndGl3dXRmdG02MA==" target="_blank" rel="noopener">Instagram</a>
-      <a href="#">LinkedIn</a>
-      <a href="#">YouTube</a>
     </div>
-    <div>&copy; 2026 Impact Global Agency. All rights reserved.</div>
+    <div>&copy; 2026 Impact Global Agency. <span data-ui="copyright">Todos los derechos reservados.</span></div>
   </div>
 </footer>
 
+<script src="assets/impact-i18n.js"></script>
+<script src="assets/landing-ui.js"></script>
 <script>
   const WHATSAPP_NUMBER = "17046762602";
   const header = document.querySelector("#siteHeader");
@@ -605,7 +611,7 @@
       trustOther: "Otras Becas",
       trustOtherSub: "Académicas y culturales",
       servicesEyebrow: "Servicios",
-      servicesTitle: "Te ayudamos a encontrar tu mejor camino.",
+      servicesTitle: "Te acompañamos a diseñar tu mejor plan para estudiar en el exterior.",
       servicesIntro: "Te acompañamos a diseñar tu mejor plan para estudiar en el exterior.",
       serviceEvalTitle: "Evaluación y perfil",
       serviceEvalText: "Analizamos edad, objetivos, nivel académico, inglés, deporte o área cultural y material disponible.",
@@ -715,7 +721,7 @@
       trustOther: "Other Scholarships",
       trustOtherSub: "Academic and cultural",
       servicesEyebrow: "Services",
-      servicesTitle: "We help you find your best path.",
+      servicesTitle: "We guide you in designing your plan to study abroad.",
       servicesIntro: "We help you design the strongest plan to study abroad.",
       serviceEvalTitle: "Evaluation and profile",
       serviceEvalText: "We review age, goals, academics, English level, sport or cultural area, and available material.",
@@ -825,7 +831,7 @@
       trustOther: "Autres bourses",
       trustOtherSub: "Académiques et culturelles",
       servicesEyebrow: "Services",
-      servicesTitle: "Nous t'aidons à trouver ton meilleur chemin.",
+      servicesTitle: "Nous t’accompagnons pour concevoir ton projet d’études à l’étranger.",
       servicesIntro: "Nous t'accompagnons pour concevoir ton meilleur plan d'études à l'étranger.",
       serviceEvalTitle: "Évaluation et profil",
       serviceEvalText: "Nous analysons l'âge, les objectifs, le niveau académique, l'anglais, le sport ou domaine culturel et le matériel disponible.",
@@ -935,7 +941,7 @@
       trustOther: "Altre borse",
       trustOtherSub: "Accademiche e culturali",
       servicesEyebrow: "Servizi",
-      servicesTitle: "Ti aiutiamo a trovare il tuo percorso migliore.",
+      servicesTitle: "Ti accompagniamo a progettare il tuo percorso di studi all’estero.",
       servicesIntro: "Ti accompagniamo a progettare il miglior piano per studiare all'estero.",
       serviceEvalTitle: "Valutazione e profilo",
       serviceEvalText: "Analizziamo età, obiettivi, livello accademico, inglese, sport o area culturale e materiale disponibile.",
@@ -1048,7 +1054,10 @@
       if(translations[currentLang][key]) element.textContent = translations[currentLang][key];
     });
     langButtons.forEach(button => button.classList.toggle("active", button.dataset.lang === currentLang));
-    window.localStorage.setItem("impactLang", currentLang);
+    window.ImpactUI.translate(document, currentLang);
+    try { window.localStorage.setItem("impactLang", currentLang); } catch { /* Translation remains available without storage. */ }
+    updateProgress();
+    if(summary.style.display === "block") renderSummary();
   }
 
   langButtons.forEach(button => {
@@ -1080,40 +1089,27 @@
     }).length;
     const percent = Math.round((completed / names.length) * 100);
     progressBar.style.width = `${percent}%`;
-    progressText.textContent = `${percent}% completo`;
+    progressText.textContent = window.ImpactUI.t("complete", {percent});
+    if(summary.style.display === "block") {
+      if(form.checkValidity()) renderSummary();
+      else summary.style.display = "none";
+    }
   }
 
-  function leadStatus(data){
-    let score = 0;
-    if(["16-17","18","19-21"].includes(data.age)) score += 1;
-    if(["Intermedio","Avanzado","Ya rendí TOEFL / Duolingo / IELTS"].includes(data.english)) score += 2;
-    if(data.path && data.path !== "Todavía no lo tengo claro") score += 1;
-    if(data.budget && data.budget !== "Prefiero hablarlo en reunión") score += 1;
-    if(data.intent === "Postular pronto") score += 2;
-    if(score >= 5) return "Perfil para revisar pronto";
-    if(score >= 3) return "Buen caso para ordenar";
-    return "Etapa exploratoria";
+  function buildMessage(data){
+    const t = window.ImpactUI.t;
+    const labels = {name:"studentName",parent:"parent",phone:"WhatsApp",email:"email",age:"age",graduation:"graduation",path:"path",sport:"sport",english:"english",budget:"budget",intent:"stage",notes:"notes"};
+    return [t("messageGreeting"), "", ...Object.entries(labels).map(([name,key]) => {
+      const field = form.elements.namedItem(name);
+      const value = field instanceof HTMLSelectElement ? field.selectedOptions[0].textContent : name === "intent" ? form.querySelector(`[name="intent"]:checked + span`).textContent : valueOrEmpty(data[name]);
+      return `${t(key)}: ${value}`;
+    })].join("\n");
   }
 
-  function buildMessage(data, status){
-    return [
-      "Hola Impact Global Agency, quiero coordinar una evaluación inicial.",
-      "",
-      `Estudiante: ${valueOrEmpty(data.name)}`,
-      `Padre/Madre: ${valueOrEmpty(data.parent)}`,
-      `WhatsApp: ${valueOrEmpty(data.phone)}`,
-      `Email: ${valueOrEmpty(data.email)}`,
-      `Edad: ${valueOrEmpty(data.age)}`,
-      `Egreso: ${valueOrEmpty(data.graduation)}`,
-      `Busca: ${valueOrEmpty(data.path)}`,
-      `Deporte/área: ${valueOrEmpty(data.sport)}`,
-      `Inglés: ${valueOrEmpty(data.english)}`,
-      `Budget anual: ${valueOrEmpty(data.budget)}`,
-      `Etapa: ${valueOrEmpty(data.intent)}`,
-      `Diagnóstico web: ${status}`,
-      "",
-      `Notas: ${valueOrEmpty(data.notes)}`
-    ].join("\n");
+  function renderSummary(){
+    const t = window.ImpactUI.t;
+    const whatsapp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(getData()))}`;
+    summary.innerHTML = `<h3>${escapeHtml(t("messageTitle"))}</h3><p>${escapeHtml(t("messageReady"))}</p><div class="actions"><a class="btn btn-whatsapp" href="${whatsapp}" target="_blank" rel="noopener">${escapeHtml(t("sendWhatsapp"))}</a></div>`;
   }
 
   form.addEventListener("input", updateProgress);
@@ -1127,23 +1123,13 @@
   form.addEventListener("submit", event => {
     event.preventDefault();
     if(!form.reportValidity()) return;
-    const data = getData();
-    const status = leadStatus(data);
-    const message = buildMessage(data, status);
-    const encoded = encodeURIComponent(message);
-    const whatsapp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
-
     summary.style.display = "block";
-    summary.innerHTML = `
-      <h3>${escapeHtml(status)}</h3>
-      <p>Ya está armado el mensaje con los datos principales para enviar por WhatsApp.</p>
-      <div class="actions">
-        <a class="btn btn-primary" href="${whatsapp}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-      </div>
-    `;
+    renderSummary();
   });
 
-  applyLanguage(window.localStorage.getItem("impactLang") || "es");
+  let savedLanguage = "es";
+  try { savedLanguage = window.localStorage.getItem("impactLang") || "es"; } catch { /* Default to Spanish. */ }
+  applyLanguage(savedLanguage);
   updateProgress();
 </script>
 </body>

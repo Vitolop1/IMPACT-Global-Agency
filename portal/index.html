@@ -1,591 +1,99 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portal | Impact Global Agency</title>
-<meta name="description" content="Portal demo de Impact Global Agency para administrar perfiles de estudiantes, jugadores y entrenadores.">
-<link rel="canonical" href="https://impactglobalagency.com/portal">
-<base href="/">
-<link rel="icon" type="image/png" href="assets/ICON.png">
-<link rel="shortcut icon" type="image/png" href="assets/ICON.png">
-<link rel="apple-touch-icon" href="assets/ICON.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --navy:#0d1b3d;
-    --navy-2:#071228;
-    --panel:#101f46;
-    --magenta:#e83e8c;
-    --orange:#ff7a59;
-    --gold:#ffc107;
-    --cyan:#00b4d8;
-    --green:#25d366;
-    --white:#ffffff;
-    --light:#f6f9fc;
-    --ink:#15243a;
-    --muted:#627184;
-    --line:#dce6ef;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font-family:Montserrat,system-ui,sans-serif;background:var(--light);color:var(--ink);line-height:1.5}
-  h1,h2,h3,p{margin:0}
-  h1,h2,h3{font-weight:900;letter-spacing:0}
-  a{color:inherit;text-decoration:none}
-  input,select,textarea,button{font:inherit}
-  button{cursor:pointer}
-  .wrap{width:min(1220px,calc(100% - 40px));margin:0 auto}
-  .top-strip{background:#030914;color:#fff;border-bottom:1px solid rgba(255,193,7,.22);font-size:13px;font-weight:800}
-  .top-strip .wrap{width:100%;min-height:36px;padding:0 32px;display:flex;align-items:center;justify-content:flex-end;gap:22px}
-  .top-strip a{display:inline-flex;color:rgba(255,255,255,.88)}
-  .top-strip a + a{border-left:1px solid rgba(255,255,255,.25);padding-left:22px}
-  .lang-switch{margin-right:auto;display:flex;align-items:center;gap:6px}
-  .lang-switch button{width:38px;height:24px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:transparent;color:#fff;font-size:11px;font-weight:900}
-  .lang-switch button.active{background:#fff;color:var(--navy)}
-  header{background:#fff;border-bottom:3px solid var(--navy);box-shadow:0 12px 32px rgba(7,18,40,.08)}
-  nav{height:98px;display:flex;align-items:center;justify-content:space-between;gap:28px}
-  .logo-img{display:block;width:300px;max-width:100%;height:auto}
-  .nav-links{display:flex;align-items:center;gap:12px;color:var(--navy);font-size:14px;font-weight:900}
-  .nav-links a{min-height:46px;padding:10px 14px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.12}
-  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:128px;padding:12px 18px;border-radius:9px;border:1px solid transparent;font-size:13px;font-weight:900}
-  .btn-primary{background:var(--magenta);color:#fff;box-shadow:0 14px 32px rgba(232,62,140,.28)}
-  .btn-green{background:var(--green);color:#fff;box-shadow:0 14px 32px rgba(37,211,102,.26)}
-  .btn-portal{background:linear-gradient(135deg,var(--gold),var(--orange));color:var(--navy);box-shadow:0 14px 32px rgba(255,193,7,.28)}
-  .btn-dark{background:var(--navy);color:#fff}
-  .btn-light{background:#fff;color:var(--navy);border-color:var(--line)}
-  .portal-hero{background:var(--navy);color:#fff;padding:58px 0 48px}
-  .portal-hero .wrap{display:grid;grid-template-columns:1fr 410px;gap:42px;align-items:center}
-  .hero-copy img{width:min(360px,80vw);height:auto;margin-bottom:26px;filter:drop-shadow(0 18px 34px rgba(0,0,0,.28))}
-  .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--cyan);font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
-  .eyebrow::before{content:"";width:28px;height:3px;border-radius:999px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--gold))}
-  .portal-hero h1{margin-top:14px;max-width:760px;font-size:clamp(36px,5vw,64px);line-height:1.02}
-  .portal-hero p{margin-top:16px;max-width:710px;color:#dbe9f5;font-size:18px;font-weight:600}
-  .login-card{background:#fff;color:var(--ink);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.24)}
-  .login-card h2{font-size:28px;color:var(--navy)}
-  .login-card .hint{color:var(--muted)}
-  .role-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}
-  .role-tab{min-height:46px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--navy);font-size:12px;font-weight:900}
-  .role-tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
-  .login-form{display:grid;gap:12px}
-  label{display:grid;gap:7px;color:var(--navy);font-size:13px;font-weight:900}
-  input,select,textarea{width:100%;min-height:48px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:12px 13px;color:var(--ink);outline:none}
-  textarea{min-height:108px;resize:vertical}
-  input:focus,select:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,180,216,.16)}
-  .hint{margin-top:12px;color:var(--muted);font-size:13px;font-weight:700}
-  .app-shell{padding:34px 0 76px}
-  .dashboard{display:grid;grid-template-columns:280px minmax(0,1fr);gap:22px;align-items:start}
-  .sidebar{position:sticky;top:16px;background:var(--navy);color:#fff;border-radius:16px;padding:20px;box-shadow:0 18px 44px rgba(13,27,61,.18)}
-  .sidebar h3{font-size:20px}
-  .sidebar p{margin-top:8px;color:#c8d5e3;font-size:13px;font-weight:600}
-  .side-menu{display:grid;gap:8px;margin-top:18px}
-  .side-menu button{min-height:44px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;text-align:left;padding:10px 12px;font-size:13px;font-weight:900}
-  .side-menu button.active{background:#fff;color:var(--navy)}
-  .main-panel{display:grid;gap:18px}
-  .section-title{display:flex;align-items:end;justify-content:space-between;gap:18px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 14px 36px rgba(13,27,61,.06)}
-  .section-title h2{font-size:clamp(26px,3vw,40px);color:var(--navy);line-height:1.08}
-  .section-title p{max-width:520px;color:var(--muted);font-weight:600}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 14px 36px rgba(13,27,61,.06)}
-  .stat b{display:block;color:var(--navy);font-size:28px;line-height:1}
-  .stat span{display:block;margin-top:7px;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 14px 36px rgba(13,27,61,.06)}
-  .card h3{font-size:22px;color:var(--navy)}
-  .card p{margin-top:8px;color:var(--muted);font-weight:600}
-  .profile-form{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
-  .profile-form .full{grid-column:1/-1}
-  .upload-box{border:1px dashed rgba(0,180,216,.55);border-radius:14px;padding:18px;background:#f8fdff}
-  .upload-box input{background:#fff}
-  .preview-card{display:grid;gap:18px}
-  .profile-head{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);padding-bottom:16px}
-  .avatar{width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,var(--magenta),var(--orange));display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:900}
-  .badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(232,62,140,.1);color:var(--magenta);font-size:12px;font-weight:900;padding:8px 12px}
-  .badge.green{background:rgba(37,211,102,.12);color:#128a43}
-  .profile-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .field-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fbfdff}
-  .field-card span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}
-  .field-card b{display:block;margin-top:4px;color:var(--navy)}
-  .video-frame{min-height:230px;border-radius:14px;background:linear-gradient(135deg,#101f46,#0d1b3d);display:grid;place-items:center;color:#fff;text-align:center;padding:24px;border:1px solid rgba(255,255,255,.12)}
-  .video-frame b{display:block;font-size:18px}
-  .video-frame span{display:block;margin-top:8px;color:#c8d5e3;font-size:13px;font-weight:700}
-  .table{width:100%;border-collapse:separate;border-spacing:0 10px;margin-top:12px}
-  .table th{color:var(--muted);font-size:12px;text-align:left;text-transform:uppercase}
-  .table td{background:#fbfdff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px;font-size:13px;font-weight:700}
-  .table td:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 10px}
-  .table td:last-child{border-right:1px solid var(--line);border-radius:0 10px 10px 0}
-  .workspace[hidden]{display:none}
-  .floating-whatsapp{position:fixed;right:22px;bottom:22px;z-index:35;width:62px;height:62px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(37,211,102,.34)}
-  .floating-whatsapp svg{width:34px;height:34px}
-  @media (max-width:1040px){
-    .portal-hero .wrap,.dashboard,.grid-2{grid-template-columns:1fr}
-    .sidebar{position:static}
-    .stats{grid-template-columns:repeat(2,1fr)}
-  }
-  @media (max-width:720px){
-    .wrap{width:min(100% - 28px,1220px)}
-    nav{height:auto;padding:18px 0;display:grid}
-    .logo-img{width:235px}
-    .nav-links{flex-wrap:wrap}
-    .role-tabs,.stats,.profile-fields,.profile-form{grid-template-columns:1fr}
-    .top-strip .wrap{padding:0 14px;gap:14px}
-    .floating-whatsapp{width:52px;height:52px;right:14px;bottom:14px}
-    .floating-whatsapp svg{width:29px;height:29px}
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal | Impact Global Agency</title>
+  <meta name="description" content="Portal de perfiles académicos y deportivos de Impact Global Agency.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://impactglobalagency.com/portal">
+  <link rel="icon" type="image/png" href="/assets/ICON.png">
+  <link rel="apple-touch-icon" href="/assets/ICON.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/portal.css">
+  <script src="/assets/impact-i18n.js" defer></script>
+  <script src="/portal/portal.js" defer></script>
 </head>
 <body>
-<div class="top-strip">
-  <div class="wrap">
-    <div class="lang-switch" aria-label="Cambiar idioma">
-      <button class="active" type="button" data-lang="es">ES</button>
-      <button type="button" data-lang="en">EN</button>
-      <button type="button" data-lang="fr">FR</button>
-      <button type="button" data-lang="it">IT</button>
+  <div class="top-strip"><div class="wrap">
+    <div class="lang-switch" data-ui-label="changeLanguage">
+      <button class="active" type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="it">IT</button>
     </div>
-    <a href="https://www.instagram.com/impact_global_agency?igsi=MTdndGl3dXRmdG02MA==" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://wa.me/17046762602?text=Hola%20Impact%20Global%20Agency%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp</a>
-  </div>
-</div>
-
-<header>
-  <div class="wrap">
-    <nav>
-      <a href="/" aria-label="Impact Global Agency">
-        <img class="logo-img" src="assets/IMPACT%20SOLO.png" alt="Impact Global Agency Logo">
-      </a>
-      <div class="nav-links">
-        <a href="/" data-i18n="navHome">Inicio</a>
-        <a href="/#servicios" data-i18n="navServices">Servicios</a>
-        <a class="btn btn-portal" href="/portal" data-i18n="navPortal">Portal</a>
-        <a class="btn btn-primary" href="/#evaluacion" data-i18n="navEvaluation">Evaluación Gratuita</a>
+    <a href="https://www.instagram.com/impact_global_agency/" target="_blank" rel="noopener">Instagram</a><a href="https://wa.me/17046762602" target="_blank" rel="noopener">WhatsApp</a>
+  </div></div>
+  <header><nav class="wrap">
+    <a href="/" aria-label="Impact Global Agency"><img class="logo" src="/assets/IMPACT%20SOLO.png" alt="Impact Global Agency" width="1028" height="254"></a>
+    <div class="nav-links"><a href="/" data-ui="home">Inicio</a><a href="/#servicios" data-ui="services">Servicios</a><a class="btn btn-portal" href="/portal" aria-current="page" data-ui="portal">Portal</a><a class="btn btn-primary" href="/#evaluacion" data-ui="evaluation">Evaluación gratuita</a></div>
+  </nav></header>
+  <main>
+    <section class="portal-hero" id="authSection"><div class="wrap auth-layout">
+      <div class="hero-copy"><img src="/assets/IMPACTTRANSPARENT-CLEAN.png" alt="Impact Global Agency" width="1850" height="411"><h1 data-ui="portalTitle">Tu próximo paso empieza acá.</h1><p data-ui="portalIntro">Prepará tu perfil, compartí tus objetivos y conectá con nuevas oportunidades.</p></div>
+      <div class="login-card">
+        <div class="auth-tabs"><button class="active" type="button" data-auth="login" data-ui="login">Iniciar sesión</button><button type="button" data-auth="register" data-ui="register">Crear cuenta</button></div>
+        <div class="role-tabs" role="group" data-ui-label="profiles"><button class="active" type="button" data-role="player" data-ui="player">Jugador / estudiante</button><button type="button" data-role="coach" data-ui="coach">Entrenador</button></div>
+        <form id="loginForm">
+          <label id="registerNameField" hidden><span data-ui="name">Nombre completo</span><input id="registerName" name="name" autocomplete="name" maxlength="100"></label>
+          <label><span data-ui="email">Correo electrónico</span><input id="loginEmail" name="email" type="email" autocomplete="username" required maxlength="254"></label>
+          <label><span data-ui="password">Contraseña</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128"></label>
+          <p class="hint" id="passwordHelp" hidden data-ui="passwordHelp">Usá al menos 8 caracteres.</p>
+          <button class="btn btn-dark" id="loginSubmit" type="submit" data-ui="login">Iniciar sesión</button><p class="feedback" id="loginError" role="alert" hidden></p>
+        </form>
+        <p class="demo-note" data-ui="demoNote">Modo demostración · Los datos se guardan en este navegador.</p>
+        <details class="demo-accounts"><summary data-ui="demoAccounts">Cuentas de prueba</summary><p><span data-ui="player">Jugador / estudiante</span>: <code>jugador@impactglobalagency.com</code></p><p><span data-ui="coach">Entrenador</span>: <code>coach@impactglobalagency.com</code></p><p><span data-ui="password">Contraseña</span>: <code>impactdemo</code></p></details>
       </div>
-    </nav>
-  </div>
-</header>
-
-<section class="portal-hero">
-  <div class="wrap">
-    <div class="hero-copy">
-      <img src="assets/IMPACTTRANSPARENT-CLEAN.png" alt="Impact Global Agency">
-      <div class="eyebrow" data-i18n="heroEyebrow">Portal Impact</div>
-      <h1 data-i18n="heroTitle">Panel de perfiles, videos y oportunidades.</h1>
-      <p data-i18n="heroText">Un espacio para que jugadores carguen su información, entrenadores revisen perfiles y el equipo administre el proceso con más orden.</p>
-    </div>
-    <aside class="login-card" id="login">
-      <h2 data-i18n="loginTitle">Entrar al panel</h2>
-      <p class="hint" data-i18n="loginIntro">Demo front-end lista para conectar con Supabase.</p>
-      <div class="role-tabs" aria-label="Tipo de usuario">
-        <button class="role-tab active" type="button" data-role="admin" data-i18n="roleAdmin">Admin</button>
-        <button class="role-tab" type="button" data-role="player" data-i18n="rolePlayer">Jugador</button>
-        <button class="role-tab" type="button" data-role="coach" data-i18n="roleCoach">Entrenador</button>
-      </div>
-      <form class="login-form" id="loginForm">
-        <label><span data-i18n="emailLabel">Email</span><input id="loginEmail" type="email" value="admin@impactglobalagency.com"></label>
-        <label><span data-i18n="passwordLabel">Contraseña</span><input type="password" value="impactdemo"></label>
-        <button class="btn btn-dark" type="submit" data-i18n="openPanel">Abrir panel</button>
-      </form>
-      <p class="hint" id="roleHint">Admin: revisar perfiles, cargar videos y ordenar oportunidades.</p>
-    </aside>
-  </div>
-</section>
-
-<main class="app-shell" id="portalApp" hidden>
-  <div class="wrap dashboard">
-    <aside class="sidebar">
-      <h3>Impact Portal</h3>
-      <p id="sidebarText">Vista admin para revisar perfiles, videos, estados y próximos pasos.</p>
-      <div class="side-menu">
-        <button class="active" type="button" data-panel="admin" data-i18n="adminPanelButton">Panel admin</button>
-        <button type="button" data-panel="player" data-i18n="playerPanelButton">Perfil jugador</button>
-        <button type="button" data-panel="coach" data-i18n="coachPanelButton">Perfil entrenador</button>
-      </div>
-    </aside>
-
-    <div class="main-panel">
-      <section class="workspace" id="adminPanel">
-        <div class="section-title">
-          <div>
-            <div class="eyebrow" data-i18n="adminEyebrow">Panel admin</div>
-            <h2 data-i18n="adminTitle">Seguimiento de perfiles.</h2>
-          </div>
-          <p data-i18n="adminIntro">Una vista para que ustedes puedan ver qué chicos están cargados, qué falta y qué perfiles están listos para enviar.</p>
-        </div>
-        <div class="stats">
-          <div class="stat"><b>24</b><span>Perfiles activos</span></div>
-          <div class="stat"><b>8</b><span>Videos pendientes</span></div>
-          <div class="stat"><b>11</b><span>Listos para enviar</span></div>
-          <div class="stat"><b>5</b><span>Reuniones próximas</span></div>
-        </div>
-        <div class="grid-2">
-          <article class="card">
-            <h3>Cargar video o recurso</h3>
-            <p>Demo de carga para highlights, CV deportivo, transcript o material académico.</p>
-            <div class="profile-form">
-              <label>Jugador<select><option>Lucas Martínez</option><option>Sofía Herrera</option><option>Mateo Silva</option></select></label>
-              <label>Tipo de archivo<select><option>Highlight video</option><option>Transcript académico</option><option>CV deportivo</option><option>Portfolio cultural</option></select></label>
-              <label class="full upload-box">Archivo o link<input id="adminVideo" type="text" placeholder="Pegá un link de YouTube, Hudl, Drive o Vimeo"></label>
-            </div>
-            <div class="actions">
-              <button class="btn btn-primary" id="adminUpload" type="button">Guardar recurso</button>
-              <button class="btn btn-light" type="button">Asignar responsable</button>
-            </div>
-            <p class="hint" id="adminStatus">Todavía no se guardó ningún recurso en esta demo.</p>
-          </article>
-          <article class="card">
-            <h3>Perfiles para revisar</h3>
-            <table class="table">
-              <thead><tr><th>Nombre</th><th>Área</th><th>Estado</th><th>Prioridad</th></tr></thead>
-              <tbody>
-                <tr><td>Lucas Martínez</td><td>Rugby</td><td>Video listo</td><td>Alta</td></tr>
-                <tr><td>Sofía Herrera</td><td>Golf</td><td>Falta budget</td><td>Media</td></tr>
-                <tr><td>Mateo Silva</td><td>Soccer</td><td>Completar inglés</td><td>Media</td></tr>
-                <tr><td>Valentina Ruiz</td><td>Arte</td><td>Portfolio listo</td><td>Alta</td></tr>
-              </tbody>
-            </table>
-          </article>
-        </div>
-      </section>
-
-      <section class="workspace" id="playerPanel" hidden>
-        <div class="section-title">
-          <div>
-            <div class="eyebrow" data-i18n="playerEyebrow">Perfil jugador</div>
-            <h2 data-i18n="playerTitle">Crear perfil para universidades.</h2>
-          </div>
-          <p data-i18n="playerIntro">El jugador carga una vez su información y el perfil queda listo para revisar, mejorar y compartir.</p>
-        </div>
-        <div class="grid-2">
-          <article class="card">
-            <h3>Datos del perfil</h3>
-            <form class="profile-form" id="profileForm">
-              <label>Nombre completo<input name="name" value="Lucas Martínez"></label>
-              <label>Email<input name="email" type="email" value="lucas@email.com"></label>
-              <label>Deporte o área<input name="sport" value="Rugby"></label>
-              <label>Posición / disciplina<input name="position" value="Apertura"></label>
-              <label>Objetivo<select name="goal"><option>Beca deportiva</option><option>Beca académica</option><option>Beca artística o cultural</option><option>Intercambio</option></select></label>
-              <label>Universidad buscada<input name="university" value="Universidades con buen rugby y Business"></label>
-              <label>Budget anual<select name="budget"><option>USD 10.000 a 20.000</option><option selected>USD 20.000 a 30.000</option><option>USD 30.000 a 45.000</option><option>Más de USD 45.000</option></select></label>
-              <label>Nivel de inglés<select name="english"><option>Básico</option><option selected>Intermedio</option><option>Avanzado</option><option>TOEFL / Duolingo / IELTS rendido</option></select></label>
-              <label>Promedio escolar / GPA<input name="gpa" value="8.4 / 10"></label>
-              <label>Situación académica<select name="academic"><option>Secundario</option><option selected>Últimos años de colegio</option><option>Transfer universitario</option><option>Graduado</option></select></label>
-              <label>Link de highlights<input name="video" value="https://youtube.com/highlights-demo"></label>
-              <label>Países de interés<input name="countries" value="Estados Unidos, Canadá"></label>
-              <label class="full">Resumen personal<textarea name="bio">Jugador competitivo, interesado en estudiar Business, vivir una experiencia internacional y competir en una universidad de buen nivel.</textarea></label>
+    </div></section>
+    <section class="app-shell" id="portalApp" hidden><div class="wrap">
+      <div class="account-bar"><div><span id="accountRole" class="eyebrow"></span><h1 id="accountName"></h1></div><button type="button" class="btn btn-light" id="logout" data-ui="logout">Cerrar sesión</button></div>
+      <p class="demo-note" data-ui="demoNote">Modo demostración · Los datos se guardan en este navegador.</p>
+      <div class="dashboard">
+        <aside class="sidebar"><div id="sideMenu" class="side-menu"></div></aside>
+        <div class="workspace">
+          <section id="playerPanel" hidden>
+            <div class="section-head"><h2 data-ui="myProfile">Mi perfil</h2><p data-ui="profileIntro">Tu información académica, deportiva y tus objetivos en un solo lugar.</p></div>
+            <form id="profileForm">
+              <div class="form-grid" id="playerFields"></div>
+              <div class="media-editor">
+                <label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label>
+                <label><span data-ui="uploadVideo">Cargar video (MP4 / WebM, hasta 50 MB)</span><input id="playerVideo" type="file" accept="video/mp4,video/webm"></label><div id="playerMedia"></div>
+              </div>
+              <label class="checkbox"><input id="publishConsent" type="checkbox"><span data-ui="visibility">Mostrar mi perfil en el buscador de esta demo.</span></label><p class="hint" data-ui="publishedConsent">El correo y el presupuesto quedan fuera de la vista pública.</p>
+              <div class="actions"><button class="btn btn-light" type="button" id="saveDraft" data-ui="saveDraft">Guardar borrador</button><button class="btn btn-primary" type="submit" data-ui="publish">Publicar perfil en la demo</button><button class="btn btn-light" type="button" id="previewProfile" data-ui="preview">Vista previa</button><button class="btn btn-light" type="button" id="unpublish" data-ui="unpublish" hidden>Retirar publicación</button></div><p id="playerStatus" class="feedback" role="status"></p>
             </form>
-            <div class="actions">
-              <button class="btn btn-primary" id="saveProfile" type="button">Actualizar perfil</button>
-              <button class="btn btn-light" type="button">Guardar borrador</button>
-            </div>
-          </article>
-          <article class="card preview-card">
-            <div class="profile-head">
-              <div style="display:flex;align-items:center;gap:14px">
-                <div class="avatar" id="avatar">LM</div>
-                <div>
-                  <span class="badge green">Perfil público</span>
-                  <h3 id="previewName">Lucas Martínez</h3>
-                </div>
-              </div>
-              <span class="badge">lucas-martinez.impactglobalagency.com</span>
-            </div>
-            <div class="profile-fields" id="profilePreview"></div>
-            <div class="video-frame">
-              <div>
-                <b id="videoTitle">Highlight reel</b>
-                <span id="videoText">https://youtube.com/highlights-demo</span>
-              </div>
-            </div>
-          </article>
+          </section>
+          <section id="coachPanel" hidden>
+            <div class="section-head"><h2 id="coachHeading" data-ui="candidates">Candidatos</h2></div>
+            <form id="candidateFilters" class="filters">
+              <label class="search"><span data-ui="search">Buscar por nombre, deporte o carrera</span><input name="search" type="search" data-ui-placeholder="search"></label>
+              <label><span data-ui="sport">Deporte o área</span><select name="sport" id="sportFilter"></select></label>
+              <label><span data-ui="graduation">Año de egreso</span><select name="graduation" id="yearFilter"></select></label>
+              <label><span data-ui="english">Nivel de inglés</span><select name="english"><option value="" data-ui="all">Todos</option><option value="intermediate" data-ui="intermediate">Intermedio</option><option value="advanced" data-ui="advanced">Avanzado</option><option value="tested" data-ui="tested">Examen rendido</option></select></label>
+              <label><span data-ui="budget">Presupuesto anual estimado</span><select name="budget"><option value="" data-ui="all">Todos</option><option value="budget10" data-ui="budget10"></option><option value="budget20" data-ui="budget20"></option><option value="budget30" data-ui="budget30"></option><option value="budget45" data-ui="budget45"></option></select></label>
+              <div class="actions"><button type="reset" class="btn btn-light" data-ui="clear">Limpiar</button><button type="button" class="btn btn-light" id="exportCandidates" data-ui="exportList">Exportar lista</button></div>
+            </form><div id="candidateCount" class="hint" aria-live="polite"></div><div id="candidateList" class="candidate-list"></div>
+          </section>
+          <section id="coachProfilePanel" hidden>
+            <div class="section-head"><h2 data-ui="coachProfile">Perfil del entrenador</h2></div>
+            <form id="coachForm"><div class="form-grid">
+              <label><span data-ui="name">Nombre completo</span><input name="name" required maxlength="100"></label><label><span data-ui="institution">Universidad / institución</span><input name="institution" required maxlength="150"></label><label><span data-ui="sport">Deporte o área</span><input name="sport" required maxlength="80"></label><label><span data-ui="countries">Países de interés</span><input name="countries" maxlength="150"></label><label class="full"><span data-ui="bio">Presentación y logros</span><textarea name="bio" maxlength="2000"></textarea></label>
+            </div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="save">Guardar</button></div><p id="coachStatus" class="feedback" role="status"></p></form>
+          </section>
+          <section id="adminPanel" hidden>
+            <div class="section-head"><h2 data-ui="profiles">Perfiles</h2><div class="actions"><button type="button" class="btn btn-primary" id="createAdminProfile" data-ui="createProfile">Nuevo perfil</button><button type="button" class="btn btn-light" id="exportAdmin" data-ui="exportList">Exportar lista</button></div></div><div class="stats" id="adminStats"></div>
+            <div class="table-wrap"><table><thead><tr><th data-ui="name">Nombre</th><th data-ui="sport">Deporte o área</th><th data-ui="state">Estado</th><th data-ui="actions">Acciones</th></tr></thead><tbody id="adminList"></tbody></table></div>
+            <form id="adminResourceForm" class="resource-form">
+              <h3 data-ui="resources">Video y seguimiento</h3><div class="form-grid">
+                <label><span data-ui="selectProfile">Elegí un perfil para revisar</span><select name="profileId" id="adminProfile"></select></label><label><span data-ui="state">Estado</span><select name="status"><option value="review" data-ui="review"></option><option value="ready" data-ui="ready"></option></select></label><label><span data-ui="responsible">Responsable</span><select name="responsible"><option value="" data-ui="choose"></option><option>Genaro Fessia</option><option>Agustín Loprestti</option><option>Vito</option></select></label><label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label><label class="full"><span data-ui="uploadVideo">Cargar video</span><input id="adminVideoFile" type="file" accept="video/mp4,video/webm"></label>
+              </div><div id="adminMedia"></div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="saveResource">Guardar cambios</button></div><p class="feedback" id="adminStatus" role="status"></p>
+            </form>
+          </section>
         </div>
-      </section>
-
-      <section class="workspace" id="coachPanel" hidden>
-        <div class="section-title">
-          <div>
-            <div class="eyebrow" data-i18n="coachEyebrow">Perfil entrenador</div>
-            <h2 data-i18n="coachTitle">Buscar perfiles compatibles.</h2>
-          </div>
-          <p data-i18n="coachIntro">Una vista pensada para entrenadores o universidades: filtros claros, datos relevantes y contacto rápido.</p>
-        </div>
-        <div class="grid-2">
-          <article class="card">
-            <h3>Filtros</h3>
-            <div class="profile-form">
-              <label>Deporte<select><option>Todos</option><option>Rugby</option><option>Soccer</option><option>Tennis</option><option>Golf</option></select></label>
-              <label>Año de egreso<select><option>Todos</option><option>2027</option><option>2028</option><option>2029</option></select></label>
-              <label>Inglés<select><option>Intermedio+</option><option>Avanzado</option><option>Examen rendido</option></select></label>
-              <label>Budget<select><option>USD 20.000+</option><option>USD 30.000+</option><option>USD 45.000+</option></select></label>
-            </div>
-            <div class="actions">
-              <button class="btn btn-dark" type="button">Buscar candidatos</button>
-              <button class="btn btn-light" type="button">Exportar lista</button>
-            </div>
-          </article>
-          <article class="card">
-            <h3>Candidatos destacados</h3>
-            <table class="table">
-              <thead><tr><th>Jugador</th><th>Perfil</th><th>Video</th><th>Acción</th></tr></thead>
-              <tbody>
-                <tr><td>Lucas Martínez</td><td>Rugby, apertura, 2027</td><td>Disponible</td><td>Ver perfil</td></tr>
-                <tr><td>Mateo Silva</td><td>Soccer, midfielder, 2028</td><td>Disponible</td><td>Guardar</td></tr>
-                <tr><td>Sofía Herrera</td><td>Golf, Business, 2027</td><td>Pendiente</td><td>Solicitar</td></tr>
-              </tbody>
-            </table>
-          </article>
-        </div>
-      </section>
-    </div>
-  </div>
-</main>
-
-<a class="floating-whatsapp" href="https://wa.me/17046762602?text=Hola%20Impact%20Global%20Agency%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="WhatsApp">
-  <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-    <path fill="currentColor" d="M16 3.2A12.67 12.67 0 0 0 5.06 22.25L3.6 28.8l6.7-1.53A12.62 12.62 0 0 0 16 28.6 12.7 12.7 0 1 0 16 3.2Zm0 23.18c-1.9 0-3.66-.5-5.2-1.38l-.47-.27-3.96.9.86-3.84-.3-.5A10.43 10.43 0 1 1 16 26.38Zm5.92-7.84c-.32-.16-1.9-.94-2.2-1.04-.3-.11-.52-.16-.74.16-.22.32-.85 1.04-1.04 1.26-.19.22-.38.24-.7.08-.32-.16-1.35-.5-2.57-1.58-.95-.85-1.59-1.9-1.78-2.22-.19-.32-.02-.5.14-.66.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.05-.4-.03-.57-.08-.16-.74-1.78-1.01-2.44-.27-.64-.54-.55-.74-.56h-.63c-.22 0-.57.08-.87.4-.3.32-1.14 1.12-1.14 2.72 0 1.6 1.17 3.15 1.33 3.36.16.22 2.3 3.5 5.57 4.9.78.34 1.39.54 1.87.69.78.25 1.49.21 2.05.13.63-.09 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.14-.3-.22-.62-.38Z"/>
-  </svg>
-</a>
-
-<script>
-  const langButtons = document.querySelectorAll("[data-lang]");
-  const translatable = document.querySelectorAll("[data-i18n]");
-  const roleTabs = document.querySelectorAll("[data-role]");
-  const panelButtons = document.querySelectorAll("[data-panel]");
-  const panels = {
-    admin: document.querySelector("#adminPanel"),
-    player: document.querySelector("#playerPanel"),
-    coach: document.querySelector("#coachPanel")
-  };
-  const roleHint = document.querySelector("#roleHint");
-  const sidebarText = document.querySelector("#sidebarText");
-  const loginEmail = document.querySelector("#loginEmail");
-  const profileForm = document.querySelector("#profileForm");
-  const profilePreview = document.querySelector("#profilePreview");
-  const previewName = document.querySelector("#previewName");
-  const avatar = document.querySelector("#avatar");
-  const videoText = document.querySelector("#videoText");
-  const adminStatus = document.querySelector("#adminStatus");
-  const adminVideo = document.querySelector("#adminVideo");
-
-  const translations = {
-    es: {
-      navHome: "Inicio",
-      navServices: "Servicios",
-      navPortal: "Portal",
-      navEvaluation: "Evaluación Gratuita",
-      heroEyebrow: "Portal Impact",
-      heroTitle: "Panel de perfiles, videos y oportunidades.",
-      heroText: "Un espacio para que jugadores carguen su información, entrenadores revisen perfiles y el equipo administre el proceso con más orden.",
-      loginTitle: "Entrar al panel",
-      loginIntro: "Demo front-end lista para conectar con Supabase.",
-      roleAdmin: "Admin",
-      rolePlayer: "Jugador",
-      roleCoach: "Entrenador",
-      emailLabel: "Email",
-      passwordLabel: "Contraseña",
-      openPanel: "Abrir panel",
-      adminPanelButton: "Panel admin",
-      playerPanelButton: "Perfil jugador",
-      coachPanelButton: "Perfil entrenador",
-      adminEyebrow: "Panel admin",
-      adminTitle: "Seguimiento de perfiles.",
-      adminIntro: "Una vista para que ustedes puedan ver qué chicos están cargados, qué falta y qué perfiles están listos para enviar.",
-      playerEyebrow: "Perfil jugador",
-      playerTitle: "Crear perfil para universidades.",
-      playerIntro: "El jugador carga una vez su información y el perfil queda listo para revisar, mejorar y compartir.",
-      coachEyebrow: "Perfil entrenador",
-      coachTitle: "Buscar perfiles compatibles.",
-      coachIntro: "Una vista pensada para entrenadores o universidades: filtros claros, datos relevantes y contacto rápido."
-    },
-    en: {
-      navHome: "Home",
-      navServices: "Services",
-      navPortal: "Portal",
-      navEvaluation: "Free Evaluation",
-      heroEyebrow: "Impact Portal",
-      heroTitle: "Profiles, videos and opportunities panel.",
-      heroText: "A space where players upload their information, coaches review profiles and the team manages the process in a more organized way.",
-      loginTitle: "Enter the panel",
-      loginIntro: "Front-end demo ready to connect with Supabase.",
-      roleAdmin: "Admin",
-      rolePlayer: "Player",
-      roleCoach: "Coach",
-      emailLabel: "Email",
-      passwordLabel: "Password",
-      openPanel: "Open panel",
-      adminPanelButton: "Admin panel",
-      playerPanelButton: "Player profile",
-      coachPanelButton: "Coach profile",
-      adminEyebrow: "Admin panel",
-      adminTitle: "Profile tracking.",
-      adminIntro: "A view to see which students are loaded, what is missing and which profiles are ready to send.",
-      playerEyebrow: "Player profile",
-      playerTitle: "Create a profile for universities.",
-      playerIntro: "The player uploads information once and the profile is ready to review, improve and share.",
-      coachEyebrow: "Coach profile",
-      coachTitle: "Search compatible profiles.",
-      coachIntro: "A view for coaches or universities: clear filters, relevant data and quick contact."
-    },
-    fr: {
-      navHome: "Accueil",
-      navServices: "Services",
-      navPortal: "Portail",
-      navEvaluation: "Évaluation gratuite",
-      heroEyebrow: "Portail Impact",
-      heroTitle: "Panel de profils, vidéos et opportunités.",
-      heroText: "Un espace où les joueurs chargent leurs informations, les entraîneurs examinent les profils et l'équipe organise mieux le processus.",
-      loginTitle: "Entrer dans le panel",
-      loginIntro: "Démo front-end prête à connecter avec Supabase.",
-      roleAdmin: "Admin",
-      rolePlayer: "Joueur",
-      roleCoach: "Entraîneur",
-      emailLabel: "Email",
-      passwordLabel: "Mot de passe",
-      openPanel: "Ouvrir le panel",
-      adminPanelButton: "Panel admin",
-      playerPanelButton: "Profil joueur",
-      coachPanelButton: "Profil entraîneur",
-      adminEyebrow: "Panel admin",
-      adminTitle: "Suivi des profils.",
-      adminIntro: "Une vue pour voir quels jeunes sont chargés, ce qui manque et quels profils sont prêts à envoyer.",
-      playerEyebrow: "Profil joueur",
-      playerTitle: "Créer un profil pour les universités.",
-      playerIntro: "Le joueur charge ses informations une fois et le profil est prêt à réviser, améliorer et partager.",
-      coachEyebrow: "Profil entraîneur",
-      coachTitle: "Chercher des profils compatibles.",
-      coachIntro: "Une vue pensée pour les entraîneurs ou universités : filtres clairs, données importantes et contact rapide."
-    },
-    it: {
-      navHome: "Home",
-      navServices: "Servizi",
-      navPortal: "Portale",
-      navEvaluation: "Valutazione gratuita",
-      heroEyebrow: "Portale Impact",
-      heroTitle: "Pannello profili, video e opportunità.",
-      heroText: "Uno spazio dove i giocatori caricano le informazioni, gli allenatori valutano i profili e il team gestisce il processo con più ordine.",
-      loginTitle: "Entra nel pannello",
-      loginIntro: "Demo front-end pronta per collegarsi a Supabase.",
-      roleAdmin: "Admin",
-      rolePlayer: "Giocatore",
-      roleCoach: "Allenatore",
-      emailLabel: "Email",
-      passwordLabel: "Password",
-      openPanel: "Apri pannello",
-      adminPanelButton: "Pannello admin",
-      playerPanelButton: "Profilo giocatore",
-      coachPanelButton: "Profilo allenatore",
-      adminEyebrow: "Pannello admin",
-      adminTitle: "Monitoraggio profili.",
-      adminIntro: "Una vista per vedere quali ragazzi sono caricati, cosa manca e quali profili sono pronti da inviare.",
-      playerEyebrow: "Profilo giocatore",
-      playerTitle: "Crea un profilo per le università.",
-      playerIntro: "Il giocatore carica le informazioni una volta e il profilo è pronto per essere rivisto, migliorato e condiviso.",
-      coachEyebrow: "Profilo allenatore",
-      coachTitle: "Cerca profili compatibili.",
-      coachIntro: "Una vista pensata per allenatori o università: filtri chiari, dati rilevanti e contatto rapido."
-    }
-  };
-
-  const copy = {
-    admin: {
-      hint: "Admin: revisar perfiles, cargar videos y ordenar oportunidades.",
-      sidebar: "Vista admin para revisar perfiles, videos, estados y próximos pasos.",
-      email: "admin@impactglobalagency.com"
-    },
-    player: {
-      hint: "Jugador: crear perfil, cargar highlights, objetivos, inglés, budget y datos académicos.",
-      sidebar: "Vista jugador para cargar información y construir un perfil público fuerte.",
-      email: "jugador@impactglobalagency.com"
-    },
-    coach: {
-      hint: "Entrenador: buscar perfiles compatibles, revisar videos y guardar candidatos.",
-      sidebar: "Vista entrenador para encontrar candidatos y revisar información ordenada.",
-      email: "coach@impactglobalagency.com"
-    }
-  };
-
-  let currentLang = "es";
-
-  function applyLanguage(lang){
-    currentLang = translations[lang] ? lang : "es";
-    document.documentElement.lang = currentLang;
-    translatable.forEach(element => {
-      const key = element.dataset.i18n;
-      if(translations[currentLang][key]) element.textContent = translations[currentLang][key];
-    });
-    langButtons.forEach(button => button.classList.toggle("active", button.dataset.lang === currentLang));
-    window.localStorage.setItem("impactLang", currentLang);
-  }
-
-  function setPanel(panel){
-    const current = copy[panel] ? panel : "admin";
-    Object.entries(panels).forEach(([key, element]) => {
-      element.hidden = key !== current;
-    });
-    panelButtons.forEach(button => button.classList.toggle("active", button.dataset.panel === current));
-    roleTabs.forEach(button => button.classList.toggle("active", button.dataset.role === current));
-    roleHint.textContent = copy[current].hint;
-    sidebarText.textContent = copy[current].sidebar;
-    loginEmail.value = copy[current].email;
-  }
-
-  function getProfileData(){
-    return Object.fromEntries(new FormData(profileForm).entries());
-  }
-
-  function initials(name){
-    return String(name || "Impact").split(" ").filter(Boolean).slice(0,2).map(part => part[0]).join("").toUpperCase();
-  }
-
-  function updatePreview(){
-    const data = getProfileData();
-    previewName.textContent = data.name || "Perfil sin nombre";
-    avatar.textContent = initials(data.name);
-    videoText.textContent = data.video || "Sin link cargado";
-    const fields = [
-      ["Deporte / área", data.sport],
-      ["Objetivo", data.goal],
-      ["Universidad buscada", data.university],
-      ["Budget anual", data.budget],
-      ["Inglés", data.english],
-      ["Promedio / GPA", data.gpa],
-      ["Situación", data.academic],
-      ["Países", data.countries],
-      ["Resumen", data.bio]
-    ];
-    profilePreview.innerHTML = fields.map(([label, value]) => `
-      <div class="field-card">
-        <span>${label}</span>
-        <b>${String(value || "-").replaceAll("<","&lt;").replaceAll(">","&gt;")}</b>
       </div>
-    `).join("");
-  }
-
-  roleTabs.forEach(button => button.addEventListener("click", () => setPanel(button.dataset.role)));
-  panelButtons.forEach(button => button.addEventListener("click", () => setPanel(button.dataset.panel)));
-  langButtons.forEach(button => button.addEventListener("click", () => applyLanguage(button.dataset.lang)));
-  document.querySelector("#loginForm").addEventListener("submit", event => {
-    event.preventDefault();
-    const active = [...roleTabs].find(button => button.classList.contains("active"));
-    setPanel(active ? active.dataset.role : "admin");
-    document.querySelector("#portalApp").hidden = false;
-    document.querySelector("#portalApp").scrollIntoView({behavior:"smooth"});
-  });
-  profileForm.addEventListener("input", updatePreview);
-  profileForm.addEventListener("change", updatePreview);
-  document.querySelector("#saveProfile").addEventListener("click", () => {
-    updatePreview();
-    document.querySelector("#saveProfile").textContent = "Perfil actualizado";
-  });
-  document.querySelector("#adminUpload").addEventListener("click", () => {
-    adminStatus.textContent = adminVideo.value.trim()
-      ? `Recurso guardado en la demo: ${adminVideo.value.trim()}`
-      : "Pegá un link o archivo para simular la carga.";
-  });
-
-  applyLanguage(window.localStorage.getItem("impactLang") || "es");
-  updatePreview();
-</script>
+    </div></section>
+    <section id="publicProfile" class="public-profile" hidden><div class="wrap"><a class="btn btn-light" href="/portal" data-ui="back">Volver al portal</a><p class="demo-note" data-ui="localPreview"></p><div id="publicProfileContent"></div></div></section>
+  </main>
+  <dialog id="profileDialog"><div class="dialog-top"><h2 data-ui="preview">Vista previa</h2><button class="btn btn-light" id="closeDialog" type="button" data-ui="close">Cerrar</button></div><div id="dialogContent"></div></dialog>
+  <footer><div class="wrap"><img src="/assets/IMPACTTRANSPARENT-CLEAN.png" alt="Impact Global Agency" width="1850" height="411"><a href="https://www.instagram.com/impact_global_agency/" target="_blank" rel="noopener">Instagram</a><a href="https://wa.me/17046762602" target="_blank" rel="noopener">WhatsApp</a></div></footer>
 </body>
 </html>
