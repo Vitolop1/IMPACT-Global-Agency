@@ -1,6 +1,7 @@
 (() => {
   const $ = selector => document.querySelector(selector);
   const UI = window.ImpactUI;
+  const Profiles = window.ImpactProfiles;
   const t = (key, values) => UI.t(key, values);
   const STORE = 'impactPortalV1';
   const SESSION = 'impactPortalSession';
@@ -46,9 +47,9 @@
   function readState() {
     try {
       const data = JSON.parse(localStorage.getItem(STORE));
-      if (data && Array.isArray(data.accounts) && Array.isArray(data.profiles)) return data;
+      if (data && Array.isArray(data.accounts) && Array.isArray(data.profiles)) return { coaches: {}, favorites: {}, ...data, version: 2, profiles: data.profiles.map(Profiles.migrate) };
     } catch { /* Keep the demo usable when storage is unavailable. */ }
-    return { accounts: [], profiles: structuredClone(seedProfiles), coaches: {}, favorites: {} };
+    return { version: 2, accounts: [], profiles: seedProfiles.map(Profiles.migrate), coaches: {}, favorites: {} };
   }
   function persist(next) {
     localStorage.setItem(STORE, JSON.stringify(next));
@@ -178,8 +179,9 @@
     if (publish && !$('#publishConsent').checked) { setFeedback('#playerStatus', 'visibility', true); return false; }
     const data = profileValues(form);
     if (data.video && !safeURL(data.video)) { setFeedback('#playerStatus', 'invalidUrl', true); return false; }
-    const profile = { ...ownProfile(), ...data, published: publish || Boolean(ownProfile().published), status: 'review', updatedAt: new Date().toISOString() };
+    let profile = Profiles.saveDraft(ownProfile(), data);
     try {
+      if (publish) profile = Profiles.publish(profile);
       persist({ ...state, profiles: [...state.profiles.filter(p => p.id !== session.id), profile] });
       $('#unpublish').hidden = !profile.published;
       setFeedback('#playerStatus', publish ? 'profilePublished' : 'draftSaved');
@@ -190,7 +192,7 @@
   $('#profileForm').addEventListener('submit', event => { event.preventDefault(); savePlayer(true); });
   $('#unpublish').addEventListener('click', () => {
     try {
-      const profile = { ...ownProfile(), published: false, updatedAt: new Date().toISOString() };
+      const profile = Profiles.withdraw(ownProfile());
       persist({ ...state, profiles: state.profiles.map(p => p.id === profile.id ? profile : p) });
       $('#publishConsent').checked = false;
       $('#unpublish').hidden = true;
@@ -222,8 +224,9 @@
   }
   async function storeVideo(id, file) {
     if (!['video/mp4', 'video/webm'].includes(file.type) || file.size > 50 * 1024 * 1024 || !file.size) throw new Error('invalidVideo');
-    await mediaOperation(id, 'put', file);
-    return { name: file.name, type: file.type, size: file.size };
+    const key = `${id}/${crypto.randomUUID()}`;
+    await mediaOperation(key, 'put', file);
+    return { key, name: file.name, type: file.type, size: file.size };
   }
   function embedURL(value) {
     try {
@@ -244,7 +247,7 @@
     container.replaceChildren();
     if (profile.media) {
       try {
-        const file = await mediaOperation(profile.id, 'get');
+        const file = await mediaOperation(profile.media.key || profile.id, 'get');
         if (container.dataset.renderToken !== token) return;
         if (file) {
           const url = URL.createObjectURL(file);
@@ -256,7 +259,7 @@
             const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-light'; button.textContent = t('removeVideo');
             button.addEventListener('click', async () => {
               try {
-                await mediaOperation(profile.id, 'delete');
+                // Keep immutable blobs referenced by an existing published snapshot.
                 const updated = { ...state.profiles.find(p => p.id === profile.id), media: null };
                 persist({ ...state, profiles: state.profiles.map(p => p.id === updated.id ? updated : p) });
                 renderMedia(container, updated, true);
@@ -333,7 +336,7 @@
     downloadFile(html, `impact-perfil-${profile.id}.html`, 'text/html;charset=utf-8');
   }
   function refreshFilterOptions() {
-    const pool = state.profiles.filter(p => p.published);
+    const pool = state.profiles.map(Profiles.discovery).filter(Boolean);
     for (const [selector, key] of [['#sportFilter', 'sport'], ['#yearFilter', 'graduation']]) {
       const select = $(selector); const old = select.value;
       select.innerHTML = option('', t('all')) + [...new Set(pool.map(p => p[key]).filter(Boolean))].sort().map(v => option(v, v, v === old)).join('');
@@ -343,7 +346,7 @@
     const f = profileValues($('#candidateFilters'));
     const favorites = state.favorites[session.id] || [];
     const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    return state.profiles.filter(p => p.published && (currentView !== 'saved' || favorites.includes(p.id)) && (!f.sport || p.sport === f.sport) && (!f.graduation || p.graduation === f.graduation) && (!f.english || p.english === f.english) && (!f.budget || p.budget === f.budget) && normalize(`${p.name} ${p.sport} ${p.major}`).includes(normalize(f.search)));
+    return state.profiles.map(Profiles.discovery).filter(p => p && (currentView !== 'saved' || favorites.includes(p.id)) && (!f.sport || p.sport === f.sport) && (!f.graduation || p.graduation === f.graduation) && (!f.english || p.english === f.english) && normalize(`${p.name} ${p.sport} ${p.major}`).includes(normalize(f.search)));
   }
   function renderCandidates() {
     $('#coachHeading').textContent = t(currentView === 'saved' ? 'saved' : 'candidates');
@@ -357,7 +360,7 @@
   $('#candidateFilters').addEventListener('reset', () => setTimeout(renderCandidates, 0));
   $('#candidateList').addEventListener('click', event => {
     const profile = event.target.closest('[data-profile]');
-    if (profile) openProfile(state.profiles.find(p => p.id === profile.dataset.profile));
+    if (profile) openProfile(Profiles.discovery(state.profiles.find(p => p.id === profile.dataset.profile)));
     const favorite = event.target.closest('[data-favorite]');
     if (favorite) {
       const id = favorite.dataset.favorite; const list = state.favorites[session.id] || [];
@@ -405,8 +408,9 @@
     drawPlayerFields(editingProfile, $('#adminEditFields'));
     $('#adminEditForm').addEventListener('submit', event => {
       event.preventDefault();
-      const profile = { ...editingProfile, ...profileValues(event.currentTarget), published: event.currentTarget.elements.published.checked, updatedAt: new Date().toISOString() };
+      let profile = Profiles.saveDraft(editingProfile, profileValues(event.currentTarget));
       try {
+        if (event.currentTarget.elements.published.checked) profile = Profiles.publish(profile);
         persist({ ...state, profiles: [...state.profiles.filter(p => p.id !== profile.id), profile] });
         $('#profileDialog').close(); renderAdmin(); setFeedback('#adminStatus', 'profileSaved');
       } catch { setFeedback('#editStatus', 'storageError', true); }
@@ -460,7 +464,8 @@
   }
   document.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click', () => applyLanguage(button.dataset.lang)));
   function renderPublicProfile() {
-    const profile = state.profiles.find(p => p.id === publicId && p.published);
+    const stored = state.profiles.find(p => p.id === publicId);
+    const profile = stored && Profiles.discovery(stored);
     const container = $('#publicProfileContent');
     container.innerHTML = profile ? profileMarkup(profile) : `<p class="empty">${escape(t('missingProfile'))}</p>`;
     if (profile) renderMedia(container.querySelector('.profile-video'), profile);
