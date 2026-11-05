@@ -60,16 +60,21 @@ module.exports = function fixture() {
       return send(request.headers().accept?.includes('vnd.pgrst.object')?rows[0]||null:rows);
     }
     if(!current)return send({message:'Forbidden'},403);
+    let changed;
     if(table==='student_profiles') {
       const id=eq('id')||body.id, old=data.students.get(id);
       if(current.role!=='admin'&&(old?old.owner_id!==sub:body.owner_id!==sub))return send({message:'Forbidden'},403);
+      if(data.denyNextStudentUpdate) { data.denyNextStudentUpdate=false; return send([]); }
       data.students.set(id,{...old,...body});
+      changed=data.students.get(id);
     }
-    if(table==='coach_profiles')data.coach.set(sub,body.data);
+    if(table==='coach_profiles') { data.coach.set(sub,body.data); changed={user_id:sub,data:body.data}; }
     if(table==='coach_favorites') {
+      changed={coach_id:sub,student_id:eq('student_id')||body.student_id};
       if(method==='DELETE')data.favorites=data.favorites.filter(f=>f.coach_id!==sub||f.student_id!==eq('student_id'));
       else data.favorites.push(body);
     }
+    if(url.searchParams.has('select')) return send(changed?[changed]:[]);
     return route.fulfill({status:204,body:''});
   }
   return {data,users,route};

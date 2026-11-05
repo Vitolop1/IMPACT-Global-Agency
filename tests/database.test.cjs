@@ -92,3 +92,27 @@ test('SQL: server publication rejects incomplete data and unsafe highlights link
   await as(other,()=>db.query('update student_profiles set draft=$1 where id=$2',[{...sample,video:'javascript:alert(1)'},other]));
   await assert.rejects(as(other,()=>db.query('select publish_profile($1)',[other])),/HTTPS/);
 });
+test('SQL: blank research sources remain optional until a human review is recorded', async () => {
+  const university = (await as(admin,()=>db.query("insert into universities(name,source_url) values('Sample source-pending university','   ') returning *"))).rows[0];
+  assert.equal(university.source_url,null);
+  const contact = (await as(admin,()=>db.query("insert into university_contacts(university_id,name,source_url) values($1,'Sample source-pending contact','') returning *",[university.id]))).rows[0];
+  assert.equal(contact.source_url,null);
+  const opportunity = (await as(admin,()=>db.query("insert into recruitment_opportunities(student_id,university_id,contact_id,title,source_url) values($1,$2,$3,'Sample source-pending opportunity','') returning *",[player,university.id,contact.id]))).rows[0];
+  assert.equal(opportunity.source_url,null);
+  assert.equal(opportunity.verification_status,'unverified');
+  assert.equal(opportunity.verified_by,null);
+  await assert.rejects(as(admin,()=>db.query("update universities set source_url=' ',verification_status='verified',last_verified_at=now() where id=$1",[university.id])),/requires a source/);
+});
+test('SQL: exposed RPCs are invoker wrappers around authorized private implementations', async () => {
+  const routines = (await db.query("select n.nspname as schema,p.proname as name,p.prosecdef as definer,p.proconfig as config from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.proname in ('publish_profile','withdraw_profile','suggested_universities')")).rows;
+  assert.equal(routines.length,6);
+  for (const routine of routines) {
+    assert.equal(routine.definer,routine.schema==='private');
+    assert.ok(routine.config.some(value=>value.startsWith('search_path=')));
+    const signature = `${routine.schema}.${routine.name}(${routine.name==='suggested_universities'?'':'uuid'})`;
+    const rights = (await db.query("select has_function_privilege('anon',$1,'EXECUTE') as anonymous,has_function_privilege('authenticated',$1,'EXECUTE') as authenticated",[signature])).rows[0];
+    assert.equal(rights.anonymous,false);
+    assert.equal(rights.authenticated,true);
+  }
+  assert.equal((await db.query("select has_schema_privilege('anon','private','USAGE') as allowed")).rows[0].allowed,false);
+});

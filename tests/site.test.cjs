@@ -154,6 +154,15 @@ test('Supabase HTTP contract: independent browser contexts share published data 
   await page.click('#unpublish');await page.waitForFunction(()=>document.querySelector('#unpublish').hidden);
   await coach.reload();await coach.waitForSelector('#coachPanel:not([hidden])');assert.equal(await coach.locator('.candidate').count(),0);
 });
+test('Supabase HTTP contract: a zero-row draft update is reported as failure',async t=>{
+  const {page,fixture}=await cloudPage(t);
+  await page.goto(base+'/portal');await cloudLogin(page);await populateProfile(page);
+  fixture.data.denyNextStudentUpdate=true;
+  await page.click('#saveDraft');
+  await page.waitForFunction(()=>document.querySelector('#playerStatus').classList.contains('error'));
+  assert.equal([...fixture.data.students.values()][0].draft.name,'Test player');
+  assert.doesNotMatch(await page.locator('#playerStatus').textContent(),/Borrador guardado/);
+});
 test('Local lifecycle: published edits, immutable media, republish, and admin status preservation',async t=>{
   const page=await pageFor(t);await page.goto(base+'/portal');await login(page,'admin@impactglobalagency.com');
   await page.selectOption('#adminProfile','demo-player');await page.selectOption('#adminResourceForm [name=status]','ready');await page.locator('#adminResourceForm [type=submit]').click();

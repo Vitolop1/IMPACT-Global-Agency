@@ -168,6 +168,7 @@ create trigger case_history before insert or update on public.recruitment_cases 
 create function private.provenance() returns trigger language plpgsql set search_path = '' as $$
 begin
   new.updated_at = now();
+  new.source_url = nullif(trim(new.source_url), '');
   if new.source_url is not null and new.source_url !~ '^https://' then raise exception 'Source URL must use HTTPS'; end if;
   if new.verification_status in ('human-reviewed','verified') then
     if nullif(trim(new.source_url), '') is null or new.last_verified_at is null then raise exception 'Reviewed data requires a source URL and verification date'; end if;
@@ -199,7 +200,7 @@ end;
 $$;
 create trigger impact_new_user after insert on auth.users for each row execute function private.handle_new_user();
 
-create function public.publish_profile(profile_id uuid) returns void language plpgsql security definer set search_path = '' as $$
+create function private.publish_profile(profile_id uuid) returns void language plpgsql security definer set search_path = '' as $$
 declare p public.student_profiles; snapshot jsonb; required_key text;
 begin
   select * into p from public.student_profiles where id = profile_id for update;
@@ -218,18 +219,31 @@ begin
   on conflict(id) do update set data=excluded.data, published_at=now();
 end;
 $$;
-create function public.withdraw_profile(profile_id uuid) returns void language plpgsql security definer set search_path = '' as $$
+create function private.withdraw_profile(profile_id uuid) returns void language plpgsql security definer set search_path = '' as $$
 begin
   if not exists(select 1 from public.student_profiles where id=profile_id and (owner_id=auth.uid() or private.is_admin())) then raise exception 'Forbidden' using errcode='42501'; end if;
   delete from public.published_profiles where id=profile_id;
 end;
 $$;
-create function public.suggested_universities() returns table(id uuid, name text, location text, source_url text, verification_status text, last_verified_at timestamptz) language sql stable security definer set search_path = '' as $$
+create function private.suggested_universities() returns table(id uuid, name text, location text, source_url text, verification_status text, last_verified_at timestamptz) language sql stable security definer set search_path = '' as $$
   select distinct u.id,u.name,u.location,u.source_url,u.verification_status,u.last_verified_at
   from public.universities u join public.recruitment_opportunities o on o.university_id=u.id
   join public.student_profiles s on s.id=o.student_id
   where s.owner_id=auth.uid() and u.verification_status in ('human-reviewed','verified') and o.verification_status in ('human-reviewed','verified');
 $$;
+-- Exposed RPCs run as the caller. The privileged implementations stay in the
+-- non-exposed private schema and still enforce ownership/authenticated identity.
+create function public.publish_profile(profile_id uuid) returns void language sql security invoker set search_path = '' as $$
+  select private.publish_profile(profile_id);
+$$;
+create function public.withdraw_profile(profile_id uuid) returns void language sql security invoker set search_path = '' as $$
+  select private.withdraw_profile(profile_id);
+$$;
+create function public.suggested_universities() returns table(id uuid, name text, location text, source_url text, verification_status text, last_verified_at timestamptz) language sql stable security invoker set search_path = '' as $$
+  select * from private.suggested_universities();
+$$;
+revoke all on function private.publish_profile(uuid), private.withdraw_profile(uuid), private.suggested_universities() from public, anon, authenticated;
+grant execute on function private.publish_profile(uuid), private.withdraw_profile(uuid), private.suggested_universities() to authenticated;
 revoke all on function public.publish_profile(uuid), public.withdraw_profile(uuid), public.suggested_universities() from public, anon, authenticated;
 grant execute on function public.publish_profile(uuid), public.withdraw_profile(uuid), public.suggested_universities() to authenticated;
 

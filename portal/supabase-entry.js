@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const unwrap = result => { if (result.error) throw result.error; return result.data; };
+const changedOne = result => {
+  const rows = unwrap(result);
+  if (!Array.isArray(rows) || rows.length !== 1) throw new Error('staleOrForbiddenRecord');
+  return rows[0];
+};
 const different = (a,b) => JSON.stringify(a) !== JSON.stringify(b);
 window.createImpactBackend = config => {
   const client = createClient(config.url,config.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});
@@ -51,20 +56,20 @@ window.createImpactBackend = config => {
       const oldDraft=old&&Object.fromEntries(D.editableFields.filter(k=>k!=='media'&&k!=='sample'&&Object.hasOwn(old,k)).map(k=>[k,old[k]]));
       if(different(draft,oldDraft)) {
         if(user.role==='coach') throw new Error('forbidden');
-        if(old) unwrap(await client.from('student_profiles').update({draft}).eq('id',p.id));
-        else unwrap(await client.from('student_profiles').insert({id:p.id,owner_id:user.role==='player'?user.id:null,draft}));
+        if(old) changedOne(await client.from('student_profiles').update({draft}).eq('id',p.id).select('id'));
+        else changedOne(await client.from('student_profiles').insert({id:p.id,owner_id:user.role==='player'?user.id:null,draft}).select('id'));
       }
       if(p.published && (different(p.publishedData,old?.publishedData)||p.publishedAt!==old?.publishedAt)) unwrap(await client.rpc('publish_profile',{profile_id:p.id}));
       if(old?.published&&!p.published) unwrap(await client.rpc('withdraw_profile',{profile_id:p.id}));
       const caseData={status:p.status||'new',assigned_staff_id:p.responsible||null,notes:p.notes||'',next_action_at:p.nextAction||null};
       const oldCase=old&&{status:old.status||'new',assigned_staff_id:old.responsible||null,notes:old.notes||'',next_action_at:old.nextAction||null};
-      if(user.role==='admin'&&different(caseData,oldCase)) unwrap(await client.from('recruitment_cases').update(caseData).eq('student_id',p.id));
+      if(user.role==='admin'&&different(caseData,oldCase)) changedOne(await client.from('recruitment_cases').update(caseData).eq('student_id',p.id).select('student_id'));
     }
     if(user.role==='coach') {
-      if(different(next.coaches[user.id],prev.coaches[user.id])) unwrap(await client.from('coach_profiles').upsert({user_id:user.id,data:next.coaches[user.id]||{}}));
+      if(different(next.coaches[user.id],prev.coaches[user.id])) changedOne(await client.from('coach_profiles').upsert({user_id:user.id,data:next.coaches[user.id]||{}}).select('user_id'));
       const wanted=next.favorites[user.id]||[],before=prev.favorites[user.id]||[];
-      for(const id of wanted.filter(id=>!before.includes(id))) unwrap(await client.from('coach_favorites').insert({coach_id:user.id,student_id:id}));
-      for(const id of before.filter(id=>!wanted.includes(id))) unwrap(await client.from('coach_favorites').delete().eq('coach_id',user.id).eq('student_id',id));
+      for(const id of wanted.filter(id=>!before.includes(id))) changedOne(await client.from('coach_favorites').insert({coach_id:user.id,student_id:id}).select('student_id'));
+      for(const id of before.filter(id=>!wanted.includes(id))) changedOne(await client.from('coach_favorites').delete().eq('coach_id',user.id).eq('student_id',id).select('student_id'));
     }
   }
   return {
@@ -76,7 +81,7 @@ window.createImpactBackend = config => {
     async reset(password) { unwrap(await client.auth.updateUser({password})); },
     async saveResearch(table,data) {
       if(!['universities','university_contacts','recruitment_opportunities','staff_members'].includes(table)) throw new Error('forbidden');
-      unwrap(await client.from(table).upsert(data));
+      changedOne(await client.from(table).upsert(data).select('id'));
     }
   };
 };
