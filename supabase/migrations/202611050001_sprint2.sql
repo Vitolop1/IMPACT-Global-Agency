@@ -230,7 +230,7 @@ create function public.suggested_universities() returns table(id uuid, name text
   join public.student_profiles s on s.id=o.student_id
   where s.owner_id=auth.uid() and u.verification_status in ('human-reviewed','verified') and o.verification_status in ('human-reviewed','verified');
 $$;
-revoke all on function public.publish_profile(uuid), public.withdraw_profile(uuid), public.suggested_universities() from public;
+revoke all on function public.publish_profile(uuid), public.withdraw_profile(uuid), public.suggested_universities() from public, anon, authenticated;
 grant execute on function public.publish_profile(uuid), public.withdraw_profile(uuid), public.suggested_universities() to authenticated;
 
 alter table public.accounts enable row level security;

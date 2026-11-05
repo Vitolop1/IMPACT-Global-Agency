@@ -9,7 +9,9 @@ before(async () => {
   await db.exec(`create role anon; create role authenticated; create schema auth;
     create table auth.users(id uuid primary key, raw_user_meta_data jsonb, email text);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
-    grant usage on schema public,auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;`);
+    grant usage on schema public,auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;
+    alter default privileges in schema public grant all on tables to anon,authenticated;
+    alter default privileges in schema public grant execute on functions to anon,authenticated;`);
   await db.exec(fs.readFileSync('supabase/migrations/202611050001_sprint2.sql','utf8'));
   for (const [id,type] of [[player,'player'],[other,'player'],[coach,'coach'],[admin,'admin']]) await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,{name:'Sample test account',account_type:type,role:'admin'}]);
   await db.query("update public.accounts set role='admin' where id=$1",[admin]);
@@ -23,6 +25,7 @@ async function as(id, fn) {
 }
 const sample = {name:'Sample athlete',sport:'Rugby',goal:'sports',graduation:'2028',academic:'secondary',english:'advanced',budget:'budget20',email:'private@example.test',notes:'Do not publish'};
 test('SQL: signup metadata cannot grant admin; roles cannot be changed by clients', async () => {
+  assert.equal((await db.query("select has_function_privilege('anon','public.publish_profile(uuid)','EXECUTE') as allowed")).rows[0].allowed,false);
   const r=await as(player,()=>db.query('select role from accounts where id=$1',[player]));
   assert.equal(r.rows[0].role,'player');
   await assert.rejects(as(player,()=>db.query("update accounts set role='admin' where id=$1",[player])), /permission denied/);

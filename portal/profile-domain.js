@@ -43,6 +43,7 @@
   function updateCase(profile, changes, actor) {
     if (actor?.role !== 'admin') throw new Error('forbidden');
     if (!stages.includes(changes.status)) throw new Error('invalidStage');
+    if (['status','responsible','notes','nextAction'].every(key => (profile[key] || '') === (changes[key] || ''))) return { ...profile, ...changes };
     const event = { from: profile.status || 'new', to: changes.status, responsible: changes.responsible || '', notes: changes.notes || '', nextAction: changes.nextAction || '', actor: actor.id, at: new Date().toISOString() };
     return { ...profile, ...changes, history: [...(profile.history || []), event] };
   }

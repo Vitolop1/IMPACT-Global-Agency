@@ -3,7 +3,7 @@
   const copy = {
     cloudPublish: ['Publicar perfil', 'Publish profile', 'Publier le profil', 'Pubblica profilo'],
     cloudPublished: ['Publicado', 'Published', 'Publié', 'Pubblicato'],
-    cloudVisibility: ['Compartir mi perfil publicado con entrenadores y visitantes del enlace.', 'Share my published profile with coaches and profile-link visitors.', 'Partager mon profil publié avec les entraîneurs et visiteurs du lien.', 'Condividi il mio profilo con allenatori e visitatori del link.'],
+    cloudVisibility: ['Hacer público mi perfil deportivo y académico para entrenadores y otros visitantes.', 'Make my sporting and academic profile public for coaches and other visitors.', 'Rendre public mon profil sportif et académique pour les entraîneurs et autres visiteurs.', 'Rendi pubblico il mio profilo sportivo e accademico per allenatori e altri visitatori.'],
     cloudProfilePublished: ['Perfil publicado.', 'Profile published.', 'Profil publié.', 'Profilo pubblicato.'],
     cloudMissingProfile: ['Este perfil no está publicado.', 'This profile is not published.', 'Ce profil n’est pas publié.', 'Questo profilo non è pubblicato.'],
     cloudPreview: ['Perfil publicado', 'Published profile', 'Profil publié', 'Profilo pubblicato'],

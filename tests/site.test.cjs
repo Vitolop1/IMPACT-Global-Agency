@@ -190,6 +190,20 @@ test('Public intake hands answers to an authenticated draft without creating a p
   assert.equal(await page.locator('#profileForm [name=name]').inputValue(),'Lucas Martínez');
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('impactIntakeDraft')),null);
 });
+test('Coach CSV exports only published data and neutralizes formulas after whitespace',async t=>{
+  const page=await pageFor(t);await page.goto(base+'/portal');await login(page,'jugador@impactglobalagency.com');
+  await page.click('#saveDraft');
+  await page.evaluate(()=>{
+    const data=JSON.parse(localStorage.getItem('impactPortalV1'));
+    const p=data.profiles.find(p=>p.id==='demo-player');p.name='Private draft name';p.publishedData.name='\t=2+2';
+    localStorage.setItem('impactPortalV1',JSON.stringify(data));
+  });
+  await logout(page);await page.reload();await login(page,'coach@impactglobalagency.com');await page.selectOption('#sportFilter','Rugby');
+  const downloaded=page.waitForEvent('download');await page.click('#exportCandidates');const download=await downloaded;
+  const csv=await fs.readFile(await download.path(),'utf8');
+  assert.ok(csv.includes("'\t=2+2"));
+  assert.doesNotMatch(csv,/Private draft name|Presupuesto|Correo|20.000/);
+});
 
 test('Static routes and every referenced logo load at /, /portal and /portal/', async t => {
   const page = await pageFor(t);

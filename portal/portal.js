@@ -414,7 +414,11 @@
     const keys = ['name', 'sport', 'position', 'graduation', 'major', 'english', 'academic', 'video'];
     if (internal) keys.push('budget', 'status', 'responsible');
     // Prevent user-entered values from becoming formulas in spreadsheet apps.
-    const quote = value => `"${String(value ?? '').replace(/^[=+@-]/, "'$&").replaceAll('"', '""')}"`;
+    const quote = value => {
+      let cell = String(value ?? '');
+      if (/^\s*[=+@-]/.test(cell)) cell = "'" + cell;
+      return `"${cell.replaceAll('"', '""')}"`;
+    };
     return '\uFEFF' + [keys.map(t), ...profiles.map(p => keys.map(key => pretty(p[key])))].map(row => row.map(quote).join(',')).join('\r\n');
   }
   $('#exportCandidates').addEventListener('click', () => downloadFile(csv(filteredCandidates(), false), 'impact-candidatos.csv', 'text/csv;charset=utf-8'));
