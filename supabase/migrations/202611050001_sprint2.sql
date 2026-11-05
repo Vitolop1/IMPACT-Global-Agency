@@ -263,6 +263,8 @@ revoke all on public.accounts, public.student_profiles, public.published_profile
 grant select on public.published_profiles to anon, authenticated;
 grant select on public.accounts to authenticated;
 grant select,insert,update on public.student_profiles, public.coach_profiles to authenticated;
+revoke update on public.student_profiles from authenticated;
+grant update(draft) on public.student_profiles to authenticated;
 grant select,insert,delete on public.coach_favorites to authenticated;
 grant select,insert,update,delete on public.staff_members, public.universities, public.university_contacts, public.recruitment_opportunities, public.media_metadata to authenticated;
 grant select,update on public.recruitment_cases to authenticated;

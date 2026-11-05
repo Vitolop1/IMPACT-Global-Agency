@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="/portal/portal.css">
   <script src="/assets/impact-i18n.js" defer></script>
   <script src="/portal/profile-domain.js" defer></script>
+  <script src="/portal/runtime-config.js" defer></script>
+  <script src="/portal/backend.js" defer></script>
   <script src="/portal/portal.js" defer></script>
 </head>
 <body>
@@ -40,6 +42,7 @@
           <label><span data-ui="password">Contraseña</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128"></label>
           <p class="hint" id="passwordHelp" hidden data-ui="passwordHelp">Usá al menos 8 caracteres.</p>
           <button class="btn btn-dark" id="loginSubmit" type="submit" data-ui="login">Iniciar sesión</button><p class="feedback" id="loginError" role="alert" hidden></p>
+          <button class="auth-link" id="forgotPassword" type="button" data-ui="forgotPassword">¿Olvidaste tu contraseña?</button>
         </form>
         <p class="demo-note" data-ui="demoNote">Modo demostración · Los datos se guardan en este navegador.</p>
         <details class="demo-accounts"><summary data-ui="demoAccounts">Cuentas de prueba</summary><p><span data-ui="player">Jugador / estudiante</span>: <code>jugador@impactglobalagency.com</code></p><p><span data-ui="coach">Entrenador</span>: <code>coach@impactglobalagency.com</code></p><p><span data-ui="password">Contraseña</span>: <code>impactdemo</code></p></details>
@@ -53,15 +56,18 @@
         <div class="workspace">
           <section id="playerPanel" hidden>
             <div class="section-head"><h2 data-ui="myProfile">Mi perfil</h2><p data-ui="profileIntro">Tu información académica, deportiva y tus objetivos en un solo lugar.</p></div>
+            <button id="useIntake" type="button" class="btn btn-light" data-ui="useIntake" hidden></button>
             <form id="profileForm">
               <div class="form-grid" id="playerFields"></div>
               <div class="media-editor">
                 <label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label>
                 <label><span data-ui="uploadVideo">Cargar video (MP4 / WebM, hasta 50 MB)</span><input id="playerVideo" type="file" accept="video/mp4,video/webm"></label><div id="playerMedia"></div>
               </div>
+              <p class="hint" id="sharedMediaNote" data-ui="sharedMediaPending" hidden></p>
               <label class="checkbox"><input id="publishConsent" type="checkbox"><span data-ui="visibility">Mostrar mi perfil en el buscador de esta demo.</span></label><p class="hint" data-ui="publishedConsent">El correo y el presupuesto quedan fuera de la vista pública.</p>
               <div class="actions"><button class="btn btn-light" type="button" id="saveDraft" data-ui="saveDraft">Guardar borrador</button><button class="btn btn-primary" type="submit" data-ui="publish">Publicar perfil en la demo</button><button class="btn btn-light" type="button" id="previewProfile" data-ui="preview">Vista previa</button><button class="btn btn-light" type="button" id="unpublish" data-ui="unpublish" hidden>Retirar publicación</button></div><p id="playerStatus" class="feedback" role="status"></p>
             </form>
+            <h3 data-ui="suggestedUniversities">Universidades posibles</h3><p class="hint" id="suggestedUniversities"></p>
           </section>
           <section id="coachPanel" hidden>
             <div class="section-head"><h2 id="coachHeading" data-ui="candidates">Candidatos</h2></div>
@@ -70,7 +76,6 @@
               <label><span data-ui="sport">Deporte o área</span><select name="sport" id="sportFilter"></select></label>
               <label><span data-ui="graduation">Año de egreso</span><select name="graduation" id="yearFilter"></select></label>
               <label><span data-ui="english">Nivel de inglés</span><select name="english"><option value="" data-ui="all">Todos</option><option value="intermediate" data-ui="intermediate">Intermedio</option><option value="advanced" data-ui="advanced">Avanzado</option><option value="tested" data-ui="tested">Examen rendido</option></select></label>
-              <label><span data-ui="budget">Presupuesto anual estimado</span><select name="budget"><option value="" data-ui="all">Todos</option><option value="budget10" data-ui="budget10"></option><option value="budget20" data-ui="budget20"></option><option value="budget30" data-ui="budget30"></option><option value="budget45" data-ui="budget45"></option></select></label>
               <div class="actions"><button type="reset" class="btn btn-light" data-ui="clear">Limpiar</button><button type="button" class="btn btn-light" id="exportCandidates" data-ui="exportList">Exportar lista</button></div>
             </form><div id="candidateCount" class="hint" aria-live="polite"></div><div id="candidateList" class="candidate-list"></div>
           </section>
@@ -86,8 +91,10 @@
             <form id="adminResourceForm" class="resource-form">
               <h3 data-ui="resources">Video y seguimiento</h3><div class="form-grid">
                 <label><span data-ui="selectProfile">Elegí un perfil para revisar</span><select name="profileId" id="adminProfile"></select></label><label><span data-ui="state">Estado</span><select name="status"><option value="review" data-ui="review"></option><option value="ready" data-ui="ready"></option></select></label><label><span data-ui="responsible">Responsable</span><select name="responsible"><option value="" data-ui="choose"></option><option>Genaro Fessia</option><option>Agustín Loprestti</option><option>Vito</option></select></label><label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label><label class="full"><span data-ui="uploadVideo">Cargar video</span><input id="adminVideoFile" type="file" accept="video/mp4,video/webm"></label>
-              </div><div id="adminMedia"></div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="saveResource">Guardar cambios</button></div><p class="feedback" id="adminStatus" role="status"></p>
+              </div><label><span data-ui="internalNotes">Notas internas</span><textarea name="notes" maxlength="10000"></textarea></label><label><span data-ui="nextAction">Próxima acción</span><input name="nextAction" type="date"></label><div id="adminMedia"></div><p id="adminSharedMediaNote" class="hint" data-ui="sharedMediaPending" hidden></p><div class="actions"><button type="submit" class="btn btn-primary" data-ui="saveResource">Guardar cambios</button><button type="button" id="adminWithdraw" class="btn btn-light" data-ui="unpublish" hidden></button></div><p class="feedback" id="adminStatus" role="status"></p>
             </form>
+            <h3 data-ui="pipelineHistory">Historial del proceso</h3><ol id="pipelineHistory" class="hint"></ol>
+            <details class="research"><summary data-ui="recruitingResearch">Universidades y oportunidades</summary><div id="researchForms"></div><div id="researchRecords"></div><p id="researchStatus" class="feedback" role="status"></p></details>
           </section>
         </div>
       </div>

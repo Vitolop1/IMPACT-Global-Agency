@@ -1109,7 +1109,13 @@
   function renderSummary(){
     const t = window.ImpactUI.t;
     const whatsapp = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(getData()))}`;
-    summary.innerHTML = `<h3>${escapeHtml(t("messageTitle"))}</h3><p>${escapeHtml(t("messageReady"))}</p><div class="actions"><a class="btn btn-whatsapp" href="${whatsapp}" target="_blank" rel="noopener">${escapeHtml(t("sendWhatsapp"))}</a></div>`;
+    summary.innerHTML = `<h3>${escapeHtml(t("messageTitle"))}</h3><p>${escapeHtml(t("messageReady"))}</p><div class="actions"><a class="btn btn-whatsapp" href="${whatsapp}" target="_blank" rel="noopener">${escapeHtml(t("sendWhatsapp"))}</a><button type="button" class="btn btn-light" id="startProfile">${escapeHtml(t('startProfile'))}</button></div>`;
+    document.querySelector('#startProfile').addEventListener('click', () => {
+      const data = getData();
+      const draft = { name: data.name, sport: data.sport, goal: data.path, graduation: data.graduation, english: data.english, budget: data.budget };
+      try { sessionStorage.setItem('impactIntakeDraft', JSON.stringify(draft)); location.assign('/portal'); }
+      catch { document.querySelector('#startProfile').disabled = true; }
+    });
   }
 
   form.addEventListener("input", updateProgress);
