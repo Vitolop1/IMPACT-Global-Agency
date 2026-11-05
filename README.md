@@ -90,7 +90,7 @@ The SQL tests use PGlite, an embedded PostgreSQL runtime with a minimal test Aut
 
 Screenshots are written to ignored `test-results/`. `PLAYWRIGHT_MODULE_PATH` can select an existing Playwright installation.
 
-GitHub Actions is configured for pushes to `vito-dev`/`codex/**` and PRs into `vito-dev`/`main`. It installs dependencies and Chromium, runs `npm test`, builds, and uploads results on failure. Remote execution status must be checked separately.
+GitHub Actions is configured for pushes to `vito-dev`/`codex/**` and PRs into `vito-dev`/`main`. It installs dependencies and Chromium, runs `npm test`, builds, and uploads results on failure. [The first feature-branch run passed](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190) at commit `b5c70a6`.
 
 ## Build and hosting
 

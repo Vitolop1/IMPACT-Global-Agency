@@ -87,7 +87,7 @@ The inquiry form still prepares a WhatsApp message. A separate Start my profile 
 
 HTTP fixture tests demonstrate browser-to-adapter behavior and shared fixture state between independent contexts. They are not live Supabase tests. SQL tests execute PostgreSQL policies with test-only Auth identities; they do not verify hosted JWT validation or email delivery. A transaction/rollback SQL script is included for the future hosted smoke check.
 
-GitHub Actions installs dependencies and Chromium, runs the suite and build, and uploads results on failure. Remote run status is documented separately from local results.
+GitHub Actions installs dependencies and Chromium, runs the suite and build, and uploads results on failure. The feature-branch [run 42051908190](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190) completed successfully at commit `b5c70a6`.
 
 ## Known limitations and next work
 
@@ -97,5 +97,6 @@ GitHub Actions installs dependencies and Chromium, runs the suite and build, and
 - Saving then publishing uses separate API calls. A failed publication can leave a saved private draft while preserving the previous public snapshot.
 - Optimistic concurrency, full audit history for all research edits, account deletion UX, monitoring, and production hardening remain future work.
 - No production deployment or merge to main was performed.
+- GitHub rejected Issue and draft-PR creation with HTTP 403. The feature branch was pushed successfully; exact Issues and PR text are prepared in GITHUB_ISSUES.md and PULL_REQUEST.md. No Issue/PR number is claimed.
 
 See SUPABASE_SETUP.md, AI_USAGE.md, GITHUB_ISSUES.md, and SPRINT2_PRESENTATION.md for reproducible setup, disclosure, issue drafts, and the presentation/demo script.
