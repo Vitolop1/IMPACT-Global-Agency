@@ -44,7 +44,7 @@ test('SQL: publication is allowlisted; draft edits preserve snapshot and staff s
   await as(player,()=>db.query('update student_profiles set draft=$1 where id=$2',[{...sample,name:'Edited draft'},player]));
   assert.equal((await as(coach,()=>db.query('select data from published_profiles where id=$1',[player]))).rows[0].data.name,sample.name);
   assert.equal((await as(admin,()=>db.query('select status from recruitment_cases where student_id=$1',[player]))).rows[0].status,'ready');
-  await assert.rejects(as(player,()=>db.query("update recruitment_cases set status='closed' where student_id=$1 returning *",[player])).then(r=>{assert.equal(r.rows.length,0); throw new Error('denied by RLS');}),/denied by RLS/);
+  assert.equal((await as(player,()=>db.query("update recruitment_cases set status='closed' where student_id=$1 returning *",[player]))).rows.length,0);
   await as(player,()=>db.query('select publish_profile($1)',[player]));
   assert.equal((await as(coach,()=>db.query('select data from published_profiles where id=$1',[player]))).rows[0].data.name,'Edited draft');
 });
@@ -73,4 +73,19 @@ test('SQL: research needs provenance and relationships; suggestions exclude unve
   assert.equal((await as(player,()=>db.query('select * from suggested_universities()'))).rows.length,1);
   assert.equal((await as(coach,()=>db.query('select * from universities'))).rows.length,0);
   await assert.rejects(as(admin,()=>db.query("insert into recruitment_opportunities(student_id,university_id,title) values($1,gen_random_uuid(),'Invalid FK')",[player])),/foreign key/);
+});
+test('SQL: production-editor smoke script runs and rolls back its fixtures', async () => {
+  const count=(await db.query('select count(*)::int as n from auth.users')).rows[0].n;
+  await db.exec(fs.readFileSync('supabase/tests/permissions.sql','utf8'));
+  assert.equal((await db.query('select count(*)::int as n from auth.users')).rows[0].n,count);
+});
+test('SQL: clients cannot write snapshots directly or reassign profile ownership', async () => {
+  await assert.rejects(as(player,()=>db.query('update student_profiles set owner_id=$1 where id=$2',[other,player])),/permission denied/);
+  for (const id of [player,coach,admin]) await assert.rejects(as(id,()=>db.query('insert into published_profiles(id,data) values($1,$2)',[player,{budget:'private'}])),/permission denied/);
+});
+test('SQL: server publication rejects incomplete data and unsafe highlights links', async () => {
+  await as(other,()=>db.query('update student_profiles set draft=$1 where id=$2',[{name:'Incomplete sample'},other]));
+  await assert.rejects(as(other,()=>db.query('select publish_profile($1)',[other])),/Incomplete profile/);
+  await as(other,()=>db.query('update student_profiles set draft=$1 where id=$2',[{...sample,video:'javascript:alert(1)'},other]));
+  await assert.rejects(as(other,()=>db.query('select publish_profile($1)',[other])),/HTTPS/);
 });
