@@ -19,16 +19,16 @@ Sprint 1 focused on understanding IMPACT, talking with the team, identifying stu
 | Draft/publication and staff-status fixes | Completed | Domain, browser, and SQL regressions pass. Draft saves preserve the live snapshot and Ready status. |
 | Auth frontend and Supabase client integration | Completed | Signup/login/logout/session/recovery/reset contract tests pass using the official client and a labeled HTTP fixture. |
 | Live secure login and email delivery | Not completed | Dedicated IMPACT project and Auth/email configuration are pending. No real recovery email was tested. |
-| Database schema and access rules | Completed | Versioned SQL plus nine embedded-PostgreSQL tests, including RLS and relationships. |
+| Database schema and access rules | Completed | Versioned SQL plus eleven embedded-PostgreSQL tests, including RLS and relationships. |
 | Real shared Supabase workflow | Partially completed | Read/write/publication/favorites adapter is implemented and tested across independent contexts using shared fixture data. No hosted project is connected. |
 | Pipeline and research screens | Completed | Local demo supports stages, staff assignment, notes, dates, history, universities, contacts, and opportunities. Shared persistence code is implemented but not live-verified. |
 | Source and human-verification tracking | Completed | SQL and forms require source/date for reviewed records; no real university facts were generated. |
 | Shared binary media | Not completed | Local uploads work; shared mode supports external HTTPS links and disables file upload. |
 | Public intake handoff | Completed | Safe same-tab proof of concept; authenticated review/save required. It is not an anonymous database endpoint. |
-| Tests and GitHub Actions | Completed | 32 local tests pass; feature-branch CI run 42051908190 passed. |
-| GitHub Issues | Partially completed | Five exact title/body drafts prepared before coding; creation rejected with HTTP 403. No Issue numbers exist. |
+| Tests and GitHub Actions | Completed | 35 local tests pass; feature-branch CI run 42051908190 passed. |
+| GitHub Issues | Completed | Issues #1–#5 created during follow-up, after the initial connector rejection. Their timing is recorded honestly. |
 | Feature branch and commits | Completed | Branch pushed; logical commits listed below. |
-| Pull Request | Partially completed | Exact draft PR prepared for vito-dev; connector creation rejected with HTTP 403. No PR number exists. |
+| Pull Request | Completed | Draft PR #6 opened into vito-dev. No merge was performed. |
 
 ## 4. Secure login
 
@@ -99,7 +99,7 @@ The branch was created from the latest vito-dev at 0a88df1. main was not changed
 
 GitHub Actions: [Portal tests, successful run 42051908190](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190), commit b5c70a6. Later documentation-only commits may trigger additional runs.
 
-Issue creation and draft-PR creation returned HTTP 403. Exact Issue titles/bodies are in GITHUB_ISSUES.md. The exact PR title/description is in PULL_REQUEST.md. [Open the prepared comparison targeting vito-dev](https://github.com/Vitolop1/IMPACT-Global-Agency/compare/vito-dev...codex/cs452-sprint2-implementation?expand=1). Do not claim an Issue or PR number until it has actually been created.
+The original connector returned HTTP 403. The existing authorized GitHub session then created [Issues #1–#5](https://github.com/Vitolop1/IMPACT-Global-Agency/issues) and [draft PR #6](https://github.com/Vitolop1/IMPACT-Global-Agency/pull/6) into vito-dev. Issue scopes were prepared before implementation, but the Issues were created afterward; no historical timing is claimed. GITHUB_ISSUES.md and PULL_REQUEST.md record the evidence.
 
 ## 9. Problems I found
 
@@ -112,11 +112,11 @@ Issue creation and draft-PR creation returned HTTP 403. Exact Issue titles/bodie
 
 ## 10. Testing
 
-Codex ran the complete suite: **32 passed, zero failed**. The original seven browser scenarios were retained.
+Codex ran the complete suite: **35 passed, zero failed**. The original seven browser scenarios were retained.
 
-- 16 browser scenarios: routes/assets, four languages, WhatsApp, original roles, signup/login/logout, session restoration, recovery/reset contract, role tampering, lifecycle/media, pipeline/research, intake, favorites, CSV privacy, and responsive screens.
+- 17 browser scenarios: routes/assets, four languages, WhatsApp, original roles, signup/login/logout, session restoration, recovery/reset contract, role tampering, lifecycle/media, pipeline/research, intake, favorites, CSV privacy, and responsive screens.
 - 5 domain tests: snapshots, private-field exclusion, migration, validation, and admin-only status changes.
-- 9 SQL tests: role protection, RLS isolation, relationships, snapshot rules, staff history, provenance, grants, server validation, and rollback smoke checks.
+- 11 SQL tests: role protection, RLS isolation, relationships, snapshot rules, staff history, provenance, grants, server validation, and rollback smoke checks.
 - 2 configuration tests: explicit demo mode, unconfigured behavior, and rejection of secret/service keys.
 
 The build passed, desktop/mobile shared-login screenshots were inspected, and GitHub Actions passed on Linux. Earlier setup failures came from a missing browser runtime and sandbox registry access; those were resolved. There are no unresolved failures in the tested suite.
@@ -150,11 +150,11 @@ Use `npm run demo` and fictional data. State at the start that this is the local
 3. **0:55–1:20:** Log out and sign in as the sample coach. Find the published candidate, open it, and save a favorite. Explain that budget and staff notes are excluded.
 4. **1:20–1:50:** Return to administrator. Show Ready was preserved, then change to Contacted with a note. Show history and the university/contact/opportunity forms. Keep research records empty or use clearly named fictional classroom samples with unverified status.
 5. **1:50–2:20:** Show the versioned migration and protected role/publication rules. Say: “The database code is built and tested locally. The live IMPACT connection is the next step.”
-6. **2:20–2:50:** Show the pushed branch, prepared Issues/PR, and successful GitHub Actions run. Show the 32-pass test result. Do not claim a live PR number, real recovery email, or cloud synchronization.
+6. **2:20–2:50:** Show the pushed branch, Issues and draft PR, and successful GitHub Actions run. Show the 35-pass test result. Show draft PR #6. Do not claim real recovery email or cloud synchronization.
 
 ## Completion summary
 
 - **COMPLETED:** lifecycle fixes, local pipeline/research UI, Auth/shared adapter code, SQL schema/RLS, tests, CI, documentation, feature branch and pushed commits.
-- **PARTIAL:** production authentication/shared data, hosted pipeline verification, GitHub Issue/PR creation.
-- **BLOCKED:** dedicated IMPACT project selection/configuration; Issue/PR writes through the connector (HTTP 403).
-- **NEXT:** activate the dedicated development backend, run real end-to-end/email checks, create the prepared Issues and draft PR, then review before merging into vito-dev.
+- **PARTIAL:** production authentication/shared data and hosted pipeline verification.
+- **BLOCKED:** dedicated IMPACT project creation/configuration, pending explicit organization selection required by the creation tool.
+- **NEXT:** activate the dedicated development backend, run real end-to-end/email checks, review draft PR #6, then merge into vito-dev only after acceptance.

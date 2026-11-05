@@ -21,7 +21,7 @@ Move the existing HTML/CSS/JavaScript prototype toward secure login, shared prof
 
 Start: latest origin/vito-dev at 0a88df1. Feature branch: codex/cs452-sprint2-implementation. Target PR: vito-dev. Do not merge or push changes to main.
 
-Issue creation was attempted before coding. GitHub returned HTTP 403. Exact Issue titles/bodies are in GITHUB_ISSUES.md; no Issue numbers are invented.
+Issue creation was attempted before coding. GitHub returned HTTP 403. Exact Issue scopes are in GITHUB_ISSUES.md. The later follow-up created real Issues #1–#5 without backdating.
 
 ## Initial architecture decision
 
@@ -31,7 +31,7 @@ The browser uses only a Supabase project URL and publishable key. A protected ac
 
 ## Verification status
 
-Final local verification: 32 tests passed, zero failed; `npm run build` succeeded in unconfigured mode. No IMPACT Supabase project is configured. Live Auth, email delivery, hosted database policies, and real cross-device behavior remain unverified. The user will provide a dedicated IMPACT development project. Unrelated connected projects were not modified.
+Final local verification: 35 tests passed, zero failed; `npm run build` succeeded in unconfigured mode. No IMPACT Supabase project is configured. Live Auth, email delivery, hosted database policies, and real cross-device behavior remain unverified. The user will provide a dedicated IMPACT development project. Unrelated connected projects were not modified.
 
 ## Implemented architecture
 
@@ -83,7 +83,7 @@ The inquiry form still prepares a WhatsApp message. A separate Start my profile 
 
 ## Test evidence
 
-`npm test` ran all 32 tests successfully on Node 24: 16 browser scenarios (including the original seven), 5 domain tests, 9 SQL/PostgreSQL tests, and 2 configuration tests. Screenshots of desktop/mobile shared login were inspected. Tests exercise role tampering, signup intent, login/logout/session restoration, PKCE recovery/reset, draft/public separation, immutable local media, staff status/history, research forms, favorites, export privacy/formula protection, relationships, and RLS.
+`npm test` ran all 35 tests successfully on Node 24: 17 browser scenarios (including the original seven), 5 domain tests, 11 SQL/PostgreSQL tests, and 2 configuration tests. Screenshots of desktop/mobile shared login were inspected. Tests exercise role tampering, signup intent, login/logout/session restoration, PKCE recovery/reset, draft/public separation, immutable local media, staff status/history, research forms, favorites, export privacy/formula protection, relationships, and RLS.
 
 HTTP fixture tests demonstrate browser-to-adapter behavior and shared fixture state between independent contexts. They are not live Supabase tests. SQL tests execute PostgreSQL policies with test-only Auth identities; they do not verify hosted JWT validation or email delivery. A transaction/rollback SQL script is included for the future hosted smoke check.
 
@@ -97,6 +97,10 @@ GitHub Actions installs dependencies and Chromium, runs the suite and build, and
 - Saving then publishing uses separate API calls. A failed publication can leave a saved private draft while preserving the previous public snapshot.
 - Optimistic concurrency, full audit history for all research edits, account deletion UX, monitoring, and production hardening remain future work.
 - No production deployment or merge to main was performed.
-- GitHub rejected Issue and draft-PR creation with HTTP 403. The feature branch was pushed successfully; exact Issues and PR text are prepared in GITHUB_ISSUES.md and PULL_REQUEST.md. No Issue/PR number is claimed.
+- The original connector rejected Issue/PR creation with HTTP 403. The authorized GitHub session subsequently created Issues #1–#5 and draft PR #6 into vito-dev. No merge was performed.
 
 See SUPABASE_SETUP.md, AI_USAGE.md, GITHUB_ISSUES.md, and SPRINT2_PRESENTATION.md for reproducible setup, disclosure, issue drafts, and the presentation/demo script.
+
+## Follow-up before hosted activation
+
+A separate review normalized blank research source URLs to NULL, moved privileged RPC implementations into private with public SECURITY INVOKER wrappers, pinned the Supabase SDK version, and required mutations to confirm exactly one affected row. This prevents an RLS-filtered zero-row update from being reported as saved. All 35 local tests pass; commit 8098b69 contains these refinements. The full test suite now includes 17 browser, 11 SQL, 5 domain, and 2 configuration tests.

@@ -49,8 +49,8 @@ No real university facts, admissions claims, coach details, or scholarship oppor
 
 ## Validation and uncertainty
 
-On November 5, 2026, Codex ran `npm test`: 32 passed, zero failed, including the original seven browser scenarios. Codex also ran `npm run build`, inspected shared-login desktop/mobile screenshots, and checked the Git diff for whitespace errors.
+On November 5, 2026, Codex ran `npm test`: 35 passed, zero failed, including the original seven browser scenarios. Codex also ran `npm run build`, inspected shared-login desktop/mobile screenshots, and checked the Git diff for whitespace errors.
 
 The dedicated hosted IMPACT project is still pending. No live migration, Auth email, SMTP setup, real multi-device data sharing, or production deployment is claimed. Shared binary media, demo-data import/account linking, concurrency handling, and a full production security review remain incomplete.
 
-GitHub Issue creation was attempted before coding and returned HTTP 403. Exact Issue drafts were saved; no historical Issues or numbers were invented. See the presentation report for final branch/PR evidence.
+GitHub Issue creation was attempted before coding and returned HTTP 403. Exact Issue scopes were saved; the authorized GitHub session later created Issues #1–#5 and draft PR #6. Their timing is documented rather than backdated. A separate Codex review found and fixed blank-source handling, private privileged RPC placement, and zero-row-save reporting. See the presentation report for branch/PR evidence.

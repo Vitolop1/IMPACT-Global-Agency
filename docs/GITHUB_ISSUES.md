@@ -1,6 +1,16 @@
-# Sprint 2 Issues ready to create
+# Sprint 2 GitHub Issues
 
-GitHub's integration returned HTTP 403 (Resource not accessible by integration) for Issue creation on 2026-11-05. No Issues were created. The following are exact titles and bodies prepared before implementation. They describe current work, not past accomplishments.
+Scopes were prepared before coding. The original connector rejected creation with HTTP 403. On November 5, 2026, the existing authorized GitHub session successfully created these Issues after the initial implementation. They are current tracking records, not backdated evidence.
+
+| Issue | Scope |
+| --- | --- |
+| [#1](https://github.com/Vitolop1/IMPACT-Global-Agency/issues/1) | Secure authentication and account recovery |
+| [#2](https://github.com/Vitolop1/IMPACT-Global-Agency/issues/2) | Shared Supabase data and profile persistence |
+| [#3](https://github.com/Vitolop1/IMPACT-Global-Agency/issues/3) | Define and improve recruiting pipeline |
+| [#4](https://github.com/Vitolop1/IMPACT-Global-Agency/issues/4) | Fix profile publication and staff-review lifecycle |
+| [#5](https://github.com/Vitolop1/IMPACT-Global-Agency/issues/5) | Run portal tests automatically in GitHub Actions |
+
+The prepared scope text follows. Each created Issue explicitly records the actual creation timing.
 
 ## Issue 1: Secure authentication and account recovery
 
@@ -13,7 +23,7 @@ Acceptance criteria:
 - Auth UI and denied-access behavior have meaningful tests.
 - Live Supabase/email verification is reported separately from mocked or local tests.
 
-Created before Sprint 2 implementation for CS 452; this is planned work, not historical completion.
+Scope prepared before implementation; the actual Issue was created afterward, following the connector permission failure.
 
 ---
 

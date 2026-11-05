@@ -84,7 +84,7 @@ npm test
 npm run build
 ```
 
-Validation on November 5, 2026: **32 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
+Validation on November 5, 2026: **35 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
 
 The SQL tests use PGlite, an embedded PostgreSQL runtime with a minimal test Auth schema. The browser Auth tests use an explicitly labeled HTTP fixture. These do not replace hosted Supabase, SMTP, or real JWT verification tests.
 
