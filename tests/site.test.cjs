@@ -5,12 +5,13 @@ const { once } = require('node:events');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const supabaseFixture = require('./helpers/supabase-fixture.cjs');
 
 let browser;
 let server;
 let base;
 before(async () => {
-  server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  server = spawn(process.execPath, ['server.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, IMPACT_MODE: 'demo', PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
   base = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Server did not start')), 10000);
     server.stdout.on('data', chunk => {
@@ -73,6 +74,145 @@ async function demoVideo(page) {
   });
   return { name: 'highlights.webm', mimeType: 'video/webm', buffer: Buffer.from(data) };
 }
+
+async function cloudPage(t, fixture = supabaseFixture(), config = {mode:'supabase',url:'https://impact-test.supabase.co',key:'sb_publishable_contract_test'}) {
+  const page=await pageFor(t);
+  await page.context().route('**/portal/runtime-config.js', route=>route.fulfill({contentType:'text/javascript',body:`window.ImpactConfig=${JSON.stringify(config)};`}));
+  await page.context().route('https://impact-test.supabase.co/**',fixture.route);
+  return {page,fixture};
+}
+async function cloudLogin(page,role='player') {
+  await page.fill('#loginEmail',`${role}@example.test`); await page.fill('#loginPassword','testpassword1'); await page.click('#loginSubmit');
+  await page.waitForSelector('#portalApp:not([hidden])');
+}
+
+test('Unconfigured portal fails closed and ignores forged local demo administrator',async t=>{
+  const {page}=await cloudPage(t,undefined,{mode:'unconfigured'});
+  await page.addInitScript(()=>sessionStorage.setItem('impactPortalSession','demo-admin'));
+  await page.goto(base+'/portal');
+  assert.equal(await page.locator('#portalApp').isVisible(),false);
+  assert.equal(await page.locator('#loginSubmit').isDisabled(),true);
+  assert.equal(await page.locator('.demo-accounts').isVisible(),false);
+  for(const path of ['/.env','/.git/config','/portal/../package.json','/scripts/config.cjs'])assert.equal((await fetch(base+path)).status,404);
+});
+test('Supabase HTTP contract: wrong password, login, persisted session, database role, logout',async t=>{
+  const {page}=await cloudPage(t);
+  await page.addInitScript(()=>{sessionStorage.setItem('impactPortalSession','demo-admin');localStorage.setItem('impactPortalV1',JSON.stringify({accounts:[{id:'admin',role:'admin'}],profiles:[]}));});
+  await page.goto(base+'/portal');
+  await fs.mkdir(path.join(__dirname,'../test-results'),{recursive:true});
+  for (const width of [1440,390]) {
+    await page.setViewportSize({width,height:900});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await page.screenshot({path:path.join(__dirname,`../test-results/shared-login-${width}.png`),fullPage:true});
+  }
+  await page.setViewportSize({width:1440,height:900});
+  assert.equal(await page.locator('.role-tabs').isVisible(),false);
+  await page.fill('#loginEmail','player@example.test');await page.fill('#loginPassword','wrongpassword');await page.click('#loginSubmit');
+  await page.waitForSelector('#loginError:not([hidden])');assert.equal(await page.locator('#portalApp').isVisible(),false);
+  await cloudLogin(page);assert.equal(await page.locator('#adminPanel').isVisible(),false);
+  await page.reload();await page.waitForSelector('#playerPanel:not([hidden])');
+  await logout(page);await page.reload();assert.equal(await page.locator('#portalApp').isVisible(),false);
+});
+test('Supabase HTTP contract: signup requests only a public role and waits for email confirmation',async t=>{
+  const {page,fixture}=await cloudPage(t);
+  await page.goto(base+'/portal');await page.click('[data-auth=register]');await page.click('[data-role=coach]');
+  await page.fill('#registerName','New Coach');await page.fill('#loginEmail','newcoach@example.test');await page.fill('#loginPassword','testpassword1');await page.click('#loginSubmit');
+  await page.waitForFunction(()=>document.querySelector('#loginError').textContent.includes('correo'));
+  const request=fixture.data.requests.find(r=>r.path.endsWith('/signup'));
+  assert.equal(request.body.data.account_type,'coach');assert.equal(request.body.data.role,undefined);
+  assert.equal(await page.locator('#portalApp').isVisible(),false);
+});
+test('Supabase HTTP contract: password recovery uses PKCE callback before allowing reset',async t=>{
+  const {page,fixture}=await cloudPage(t);
+  await page.goto(base+'/portal');await page.click('#forgotPassword');await page.fill('#loginEmail','player@example.test');await page.click('#loginSubmit');
+  await page.waitForFunction(()=>document.querySelector('#loginError').textContent.includes('enlace'));
+  const request=fixture.data.requests.find(r=>r.path.endsWith('/recover'));
+  assert.ok(request.body.code_challenge);
+  const callback=new URL(request.url).searchParams.get('redirect_to');
+  const url=new URL(callback);url.searchParams.set('code','recovery-code');
+  await page.goto(url.href);await page.waitForFunction(()=>document.querySelector('#loginSubmit').dataset.ui==='resetPassword');
+  await page.fill('#loginPassword','updatedpassword1');await page.click('#loginSubmit');
+  await page.waitForFunction(()=>document.querySelector('#loginError').textContent.includes('actualizada'));
+  assert.equal(fixture.users.get('player@example.test').password,'updatedpassword1');
+  assert.ok(fixture.data.requests.find(r=>r.path.endsWith('/token')&&r.body.code_verifier));
+  assert.equal(await page.locator('#portalApp').isVisible(),false);
+});
+test('Supabase HTTP contract: independent browser contexts share published data without private fields',async t=>{
+  const fixture=supabaseFixture();const {page}=await cloudPage(t,fixture);
+  await page.goto(base+'/portal');await cloudLogin(page);await populateProfile(page);
+  await page.click('#saveDraft');await page.waitForFunction(()=>document.querySelector('#playerStatus').textContent.includes('guardado'));
+  await page.check('#publishConsent');await page.locator('#profileForm [type=submit]').click();
+  await page.waitForFunction(()=>document.querySelector('#playerStatus').textContent.includes('publicado'));
+  const {page:coach}=await cloudPage(t,fixture);await coach.goto(base+'/portal');await cloudLogin(coach,'coach');
+  assert.equal(await coach.locator('.candidate').count(),1);
+  await coach.locator('[data-profile]').click();assert.match(await coach.locator('#dialogContent').textContent(),/Lucía Núñez/);
+  assert.doesNotMatch(await coach.locator('#dialogContent').textContent(),/20.000|budget|player@example/);
+  await coach.click('#closeDialog');await coach.locator('[data-favorite]').click();await coach.click('[data-view=saved]');assert.equal(await coach.locator('.candidate').count(),1);
+  await page.fill('#profileForm [name=name]','Unpublished edit');await page.click('#saveDraft');
+  await page.waitForFunction(()=>document.querySelector('#playerStatus').textContent.includes('guardado'));
+  await coach.reload();await coach.waitForSelector('.candidate');assert.match(await coach.locator('.candidate').textContent(),/Lucía Núñez/);
+  await page.click('#unpublish');await page.waitForFunction(()=>document.querySelector('#unpublish').hidden);
+  await coach.reload();await coach.waitForSelector('#coachPanel:not([hidden])');assert.equal(await coach.locator('.candidate').count(),0);
+});
+test('Supabase HTTP contract: a zero-row draft update is reported as failure',async t=>{
+  const {page,fixture}=await cloudPage(t);
+  await page.goto(base+'/portal');await cloudLogin(page);await populateProfile(page);
+  fixture.data.denyNextStudentUpdate=true;
+  await page.click('#saveDraft');
+  await page.waitForFunction(()=>document.querySelector('#playerStatus').classList.contains('error'));
+  assert.equal([...fixture.data.students.values()][0].draft.name,'Test player');
+  assert.doesNotMatch(await page.locator('#playerStatus').textContent(),/Borrador guardado/);
+});
+test('Local lifecycle: published edits, immutable media, republish, and admin status preservation',async t=>{
+  const page=await pageFor(t);await page.goto(base+'/portal');await login(page,'admin@impactglobalagency.com');
+  await page.selectOption('#adminProfile','demo-player');await page.selectOption('#adminResourceForm [name=status]','ready');await page.locator('#adminResourceForm [type=submit]').click();
+  await logout(page);await login(page,'jugador@impactglobalagency.com');await page.fill('#profileForm [name=name]','Private draft name');await page.click('#saveDraft');
+  const publicPage=await page.context().newPage();await publicPage.goto(base+'/portal?perfil=demo-player');
+  assert.equal(await publicPage.locator('#publicProfileContent h2').textContent(),'Lucas Martínez');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('impactPortalV1')).profiles.find(p=>p.id==='demo-player').status),'ready');
+  await page.setInputFiles('#playerVideo',await demoVideo(page));await page.waitForFunction(()=>document.querySelector('#playerMedia video')?.readyState>=1);
+  await publicPage.reload();assert.equal(await publicPage.locator('video').count(),0);
+  await page.locator('#profileForm [type=submit]').click();await publicPage.reload();assert.equal(await publicPage.locator('#publicProfileContent h2').textContent(),'Private draft name');
+  await publicPage.waitForFunction(()=>document.querySelector('video')?.readyState>=1);
+  const publishedKey=await page.evaluate(()=>JSON.parse(localStorage.getItem('impactPortalV1')).profiles.find(p=>p.id==='demo-player').publishedData.media.key);
+  await page.setInputFiles('#playerVideo',await demoVideo(page));await page.waitForFunction(key=>JSON.parse(localStorage.getItem('impactPortalV1')).profiles.find(p=>p.id==='demo-player').media.key!==key,publishedKey);
+  await publicPage.reload();await publicPage.waitForFunction(()=>document.querySelector('video')?.readyState>=1);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('impactPortalV1')).profiles.find(p=>p.id==='demo-player').publishedData.media.key),publishedKey);
+});
+test('Local admin: pipeline history and source-aware university/contact/opportunity tracking',async t=>{
+  const page=await pageFor(t);await page.goto(base+'/portal');await login(page,'admin@impactglobalagency.com');
+  await page.selectOption('#adminProfile','demo-player');await page.selectOption('#adminResourceForm [name=status]','contacted');await page.fill('#adminResourceForm [name=notes]','Private contact note');await page.locator('#adminResourceForm [type=submit]').click();
+  assert.match(await page.locator('#pipelineHistory').textContent(),/Private contact note/);
+  await page.locator('details.research > summary').click();const form=page.locator('[data-research=universities]');await form.locator('..').locator('summary').click();
+  await form.locator('[name=name]').fill('Sample classroom university');await form.locator('[name=source_url]').fill('https://example.test/sample');await form.locator('[name=programs]').fill('Sample program');await form.locator('[type=submit]').click();
+  assert.match(await page.locator('#researchRecords').textContent(),/Sample classroom university/);
+  const universities=await page.evaluate(()=>JSON.parse(localStorage.getItem('impactPortalV1')).universities);assert.equal(universities[0].verification_status,'unverified');
+  const contacts=page.locator('[data-research=contacts]');await contacts.locator('..').locator('summary').click();await contacts.locator('[name=university_id]').selectOption(universities[0].id);await contacts.locator('[name=name]').fill('Sample contact');await contacts.locator('[type=submit]').click();
+  const opp=page.locator('[data-research=opportunities]');await opp.locator('..').locator('summary').click();await opp.locator('[name=student_id]').selectOption('demo-player');await opp.locator('[name=university_id]').selectOption(universities[0].id);await opp.locator('[name=title]').fill('Sample opportunity');await opp.locator('[type=submit]').click();
+  await page.reload();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('impactPortalV1')).opportunities.length),1);
+  await page.locator('details.research > summary').click();
+  await page.screenshot({path:path.join(__dirname,'../test-results/pipeline-admin.png'),fullPage:true});
+});
+test('Public intake hands answers to an authenticated draft without creating a public record',async t=>{
+  const page=await pageFor(t);await page.goto(base);await page.fill('#name','Inquiry student');await page.fill('#phone','1234567');await page.selectOption('#age','18');await page.selectOption('#path','sports');await page.selectOption('#english','advanced');await page.selectOption('#budget','budget20');await page.locator('#leadForm [type=submit]').click();await page.click('#startProfile');await page.waitForURL('**/portal');
+  await login(page,'jugador@impactglobalagency.com');await page.fill('#profileForm [name=sport]','');await page.click('#useIntake');
+  assert.equal(await page.locator('#profileForm [name=name]').inputValue(),'Lucas Martínez');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('impactIntakeDraft')),null);
+});
+test('Coach CSV exports only published data and neutralizes formulas after whitespace',async t=>{
+  const page=await pageFor(t);await page.goto(base+'/portal');await login(page,'jugador@impactglobalagency.com');
+  await page.click('#saveDraft');
+  await page.evaluate(()=>{
+    const data=JSON.parse(localStorage.getItem('impactPortalV1'));
+    const p=data.profiles.find(p=>p.id==='demo-player');p.name='Private draft name';p.publishedData.name='\t=2+2';
+    localStorage.setItem('impactPortalV1',JSON.stringify(data));
+  });
+  await logout(page);await page.reload();await login(page,'coach@impactglobalagency.com');await page.selectOption('#sportFilter','Rugby');
+  const downloaded=page.waitForEvent('download');await page.click('#exportCandidates');const download=await downloaded;
+  const csv=await fs.readFile(await download.path(),'utf8');
+  assert.ok(csv.includes("'\t=2+2"));
+  assert.doesNotMatch(csv,/Private draft name|Presupuesto|Correo|20.000/);
+});
 
 test('Static routes and every referenced logo load at /, /portal and /portal/', async t => {
   const page = await pageFor(t);

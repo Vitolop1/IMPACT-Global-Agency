@@ -1,67 +1,119 @@
-# Impact Global Agency - sitio web
+# IMPACT Global Agency
 
-Sitio y portal de Impact Global Agency, agencia de oportunidades deportivas, académicas y culturales para estudiar en Estados Unidos y otros países.
+IMPACT helps students and student-athletes, particularly from Argentina and Latin America, explore academic, athletic, and cultural opportunities. This repository contains the public website and recruitment portal. It is also Vito Loprestti's University of Lynchburg CS 452 Senior Project.
 
-## Estructura
+Development happens on `vito-dev` or a feature branch based on it. `main` remains the stable deployment branch; use reviewed Pull Requests.
 
-- `index.html`: presentación, servicios, información y requisitos, proceso, equipo, evaluación, preguntas frecuentes y contacto.
-- `assets/impact-i18n.js`: traducciones de formularios y portal en español, inglés, francés e italiano.
-- `assets/landing-ui.js`: etiquetas del formulario y medidas del encabezado fijo.
-- `portal/index.html`, `portal/portal.css`, `portal/portal.js`: registro, acceso y paneles por rol.
-- `assets/`: logos e iconos de marca. Se respetan mayúsculas y nombres de archivos en las URLs.
-- `robots.txt` y `sitemap.xml`: SEO de la página pública. El portal usa `noindex`.
+## Run locally
 
-## Como iniciarlo
+Use Node 24 (the version used for validation).
 
 ```bash
-npm start
-```
-
-Después entrar a `http://localhost:8000` y `http://localhost:8000/portal`.
-
-## Portal de demostración
-
-La pantalla pública ofrece jugador/estudiante y entrenador. El rol de administración se determina por la cuenta, sin un selector público. Antes de ingresar no se muestran los paneles. Cerrar sesión vuelve al acceso; recargar conserva la sesión en la misma pestaña.
-
-| Cuenta de prueba | Contraseña | Vista |
-| --- | --- | --- |
-| `jugador@impactglobalagency.com` | `impactdemo` | Perfil del estudiante |
-| `coach@impactglobalagency.com` | `impactdemo` | Candidatos, guardados y perfil del entrenador |
-| `admin@impactglobalagency.com` | `impactdemo` | Perfiles, edición, videos, responsable y estado |
-
-Estos correos son identificadores de prueba, no casillas de contacto. También se pueden crear cuentas de jugador o entrenador desde el formulario. Las contraseñas de esas cuentas se derivan con PBKDF2 y un salt individual.
-
-Los perfiles, cuentas y favoritos se guardan en `localStorage` bajo `impactPortalV1`. Los videos MP4/WebM de hasta 50 MB se guardan en `IndexedDB` (`impactPortalMedia`), sin subir archivos a un servidor. Borrar los datos del navegador elimina la demo guardada. Los perfiles iniciales están marcados como ejemplos.
-
-Los jugadores pueden guardar borradores, publicar en el buscador de la demo, retirar la publicación, cargar highlights, abrir una vista previa y descargar una página HTML. La ruta `/portal?perfil=ID` muestra un perfil publicado disponible en el mismo navegador. Esa vista y la descarga excluyen el correo y el presupuesto. No se presentan subdominios ficticios como si estuvieran activos.
-
-Los entrenadores pueden filtrar candidatos, guardar favoritos y exportar la lista. Administración puede crear y editar perfiles, cargar videos o links, asignar a Genaro Fessia o Agustín Loprestti y registrar el estado.
-
-Esta es una demo local: el acceso por roles en el frontend no reemplaza autenticación y autorización en un servidor. Para datos reales y perfiles compartidos entre dispositivos, conectar Supabase Auth, tablas con políticas RLS y Storage. Los subdominios individuales requieren además DNS y rutas del hosting. La demo actual no ofrece esa sincronización.
-
-## Publicación y rutas
-
-Vercel publica desde `main`. `vercel.json` incluye el sitio estático completo y resuelve `/portal` hacia `portal/index.html`. Los estilos, scripts y logos del portal usan rutas desde la raíz para funcionar tanto en `/portal` como en `/portal/`.
-
-Para Cloudflare Workers, `wrangler.jsonc` configura los archivos estáticos con el binding `ASSETS`; `_worker.js` resuelve la ruta del portal. Publicar el repositorio actualizado con la integración Git existente o ejecutar `npx wrangler deploy` desde una sesión autorizada de Cloudflare. El dominio debe estar asociado al proyecto que sirve estos archivos.
-
-Si usás Cloudflare Pages, la carpeta de salida del sitio estático es la raíz, sin compilación de frontend. `_redirects` y `_worker.js` incluyen las rutas del portal. No subas solamente `index.html`: también deben publicarse `assets/` y `portal/`.
-
-Si Vercel muestra la actualización y el dominio propio muestra una versión anterior, revisar en Cloudflare qué proyecto o Worker atiende ese dominio. Las reglas personalizadas de caché pueden servir archivos anteriores; Cloudflare recomienda evitar caché adicional sobre Pages. Ver [rutas y caché en Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/) y [rutas HTML en Workers](https://developers.cloudflare.com/workers/static-assets/routing/advanced/html-handling/).
-
-## Verificación
-
-```bash
-npm install
+npm ci
 npx playwright install chromium
-npm test
+npm run demo
 ```
 
-Las pruebas levantan un servidor en un puerto disponible y comprueban rutas y logos, idiomas, consulta por WhatsApp, acceso por rol, registro, perfiles, video reproducible, filtros, favoritos, administración y pantallas de 320 a 1920 px. Las capturas se guardan en `test-results/` y no se versionan. `PLAYWRIGHT_MODULE_PATH` permite usar un runtime de Playwright ya instalado.
+Open http://localhost:8000 and http://localhost:8000/portal.
 
-## Pendientes
+`npm run demo` explicitly enables the local prototype. It is useful for classroom demonstrations and contains fictional sample profiles.
 
-- Definir correo corporativo `@impactglobalagency.com`.
-- Instagram ya está enlazado a `impact_global_agency`. No se publican enlaces vacíos a otras redes.
-- Sumar testimonios en video cuando haya casos listos.
-- Conectar autenticación, base de datos y archivos compartidos con Supabase.
+| Demo account | Password | Role |
+| --- | --- | --- |
+| jugador@impactglobalagency.com | impactdemo | Player/student |
+| coach@impactglobalagency.com | impactdemo | Coach |
+| admin@impactglobalagency.com | impactdemo | Administrator |
+
+These are test identifiers, not contact email addresses. Demo accounts and permissions are NOT production security.
+
+`npm start` reads an optional ignored `.env`. Without Supabase configuration it keeps sign-in unavailable; it never silently enables demo accounts. The public website still works.
+
+## Current working features
+
+- Four-language public website, responsive navigation, inquiry form, and WhatsApp message preparation.
+- Player draft/edit/publish/withdraw/preview and HTML export.
+- Separate draft and published snapshots, including immutable references to local uploaded videos.
+- Coach discovery, filters, favorites, profile viewing, and CSV export using published data only.
+- Administrator profile editing, explicit publication/withdrawal, pipeline status, assignment, notes, dates, and history.
+- University, contact, staff, and opportunity forms with provenance and human-verification fields.
+- Optional inquiry-to-profile handoff within the same browser tab. Answers enter an authenticated form and require review/save; there is no anonymous profile-creation endpoint.
+
+## Prototype/local-only features
+
+In demo mode, accounts, profile drafts, published snapshots, favorites, research records, and pipeline state live in `localStorage` under `impactPortalV1`. Sessions use `sessionStorage`. Uploaded MP4/WebM videos up to 50 MB live in IndexedDB (`impactPortalMedia`).
+
+Existing V1 profile records are migrated in memory to separate snapshots and saved on the next edit. Published video blobs are not overwritten by draft uploads. Old blobs are retained until browser storage is cleared; automated cleanup is future work.
+
+Demo data is not synchronized between browsers or devices. Clearing browser storage deletes it. Use fictional data in this mode.
+
+## Supabase-backed implementation
+
+The source now includes:
+
+- Official Supabase Auth client integration: signup, login, logout, persistent session, forgot-password, and PKCE reset callback.
+- Protected database roles, ownership/RLS policies, private profile drafts, and allowlisted public snapshots.
+- Shared profile read/write, publication/withdrawal RPCs, coach favorites, admin pipeline/research persistence, and reviewed opportunity suggestions.
+- Versioned migration: `supabase/migrations/202611050001_sprint2.sql`.
+- Transactional SQL smoke checks: `supabase/tests/permissions.sql`.
+
+**Connection state on November 5, 2026:** no IMPACT project has been selected/configured or migrated. The connected account currently exposes unrelated projects, which were left untouched. Browser HTTP contract tests pass, and SQL policies pass against embedded PostgreSQL. Live hosted authentication, email delivery, and real cross-browser Supabase persistence are not yet verified.
+
+Follow [Supabase setup](docs/SUPABASE_SETUP.md). Copy `.env.example` to an ignored `.env`, then set only:
+
+```dotenv
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY=YOUR_BROWSER_PUBLISHABLE_KEY
+```
+
+Leave `IMPACT_MODE` empty for Supabase. A legacy `anon` key is supported; secret/service-role keys are rejected. No server secret is required by the browser integration.
+
+## Publication and recruitment rules
+
+A draft save changes private editable data. It never changes the published snapshot or staff status. Publish validates the draft and replaces the snapshot explicitly. Withdraw deletes the snapshot; coach search, saved discovery, CSV exports, and public routes stop returning it.
+
+Player edits do not change staff status, including when republishing. Only administrators can change New → Reviewing → Ready → Contacted → Opportunity → Application → Accepted → Closed. Administrators may move between any listed stages; changes are recorded in history. The stored key `review` is retained for compatibility.
+
+Published snapshots exclude budget, account email, age, internal notes, assignments, and review history. A student can intentionally include information in free text, so the publication form asks them to review what they share.
+
+Universities, contacts, and opportunities start `unverified`. Other states are `ai-assisted`, `human-reviewed`, and `verified`. Reviewed records require an HTTPS source and verification date. The database records the authenticated reviewer. A status records a human's review; it is not a guarantee that a university fact is correct. No real university data is seeded.
+
+## Testing
+
+```bash
+npm test
+npm run build
+```
+
+Validation on November 5, 2026: **35 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
+
+The SQL tests use PGlite, an embedded PostgreSQL runtime with a minimal test Auth schema. The browser Auth tests use an explicitly labeled HTTP fixture. These do not replace hosted Supabase, SMTP, or real JWT verification tests.
+
+Screenshots are written to ignored `test-results/`. `PLAYWRIGHT_MODULE_PATH` can select an existing Playwright installation.
+
+GitHub Actions is configured for pushes to `vito-dev`/`codex/**` and PRs into `vito-dev`/`main`. It installs dependencies and Chromium, runs `npm test`, builds, and uploads results on failure. [The first feature-branch run passed](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190) at commit `b5c70a6`.
+
+## Build and hosting
+
+`npm run build` creates ignored `dist/` using tracked public assets, a bundled browser client, and generated public runtime configuration. It excludes environment files, SQL, documentation, tests, and Git metadata. The development server also restricts access to public routes/assets.
+
+Vercel now builds and publishes `dist/`; Cloudflare Workers uses `dist/` for its ASSETS binding. Run the build before Cloudflare deployment. Cloudflare Pages should also use `npm run build` and output directory `dist`. Set the two public Supabase variables in the hosting environment before enabling hosted login.
+
+No production deployment is performed by this sprint. A deployment without configuration intentionally shows sign-in as unavailable.
+
+## Not yet implemented
+
+- Hosted IMPACT project activation and live Auth/RLS/email verification.
+- Shared binary media uploads, storage policies, signed playback URLs, and cleanup. In Supabase mode, upload controls are disabled with an explanation; HTTPS highlights links work through the profile model.
+- Import of local demo accounts/profiles into real accounts.
+- Claiming an administrator-created student record from a newly registered account.
+- Full recruitment automation, invitations, notifications, university-data research, or automatic matching.
+- Concurrent-edit conflict resolution, production monitoring, and a completed production security review.
+
+## Next steps and class material
+
+Select the dedicated IMPACT development project, apply the migration, configure Auth callbacks/email, set public environment values, and verify a player → publication → independent coach → admin pipeline workflow against the real service.
+
+- [Sprint technical notes](docs/CS452_SPRINT2.md)
+- [Presentation-ready report and demo plan](docs/SPRINT2_PRESENTATION.md)
+- [AI assistance disclosure](docs/AI_USAGE.md)
+- [Exact Issue titles/bodies](docs/GITHUB_ISSUES.md)

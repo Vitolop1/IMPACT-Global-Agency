@@ -1,0 +1,28 @@
+name: Portal tests
+on:
+  push:
+    branches: [vito-dev, 'codex/**']
+  pull_request:
+    branches: [vito-dev, main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: portal-test-results
+          path: test-results/
+          if-no-files-found: ignore
