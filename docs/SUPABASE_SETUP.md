@@ -2,19 +2,22 @@
 
 ## Current state
 
-The integration is implemented and tested locally. No IMPACT hosted project has been selected, migrated, or configured. The connected Supabase account showed RugbyNow and andamio-dev; both were left unchanged. The user chose to provide a separate IMPACT development project.
+The portal uses [impact-dev](https://supabase.com/dashboard/project/jbhvwpfgpnwyqzfobxcq) in `us-east-1`, provisioned with a quoted additional cost of $0. RugbyNow and andamio-dev were left unchanged. The local checkout is configured with the project URL and publishable key only.
 
 ## 1. Choose the dedicated project
 
-Create/select an IMPACT development project and provide its name or project ref. Before applying SQL, inspect its tables and migration history. This migration creates new public tables and is intended for a clean project; do not apply it blindly to an existing application.
+Use the existing IMPACT development project. For a new environment, inspect its tables and migration history first. The initial migration is intended for a clean schema.
 
 ## 2. Apply and check the schema
 
-In that project's SQL editor, run `supabase/migrations/202611050001_sprint2.sql` once. It is a transaction: a failure rolls back the migration. The file is also compatible with a Supabase CLI migration workflow if one is adopted later.
+Both migrations are applied to `impact-dev`, in order. The hosted migration API assigned its own version numbers:
 
-Then run `supabase/tests/permissions.sql`. It creates fictional transaction-local fixtures, tests ownership, role protection, publication privacy, withdrawal, and staff state, and rolls everything back. A successful script returns a PASS result. This script has passed locally against embedded PostgreSQL; it has not yet run on hosted Supabase.
+| Source migration | Hosted migration |
+| --- | --- |
+| `202611050001_sprint2.sql` | `20261110195721_sprint2_initial_schema` |
+| `20261110145219_recruiting_interactions_catalog.sql` | `20261110195811_recruiting_interactions_catalog` |
 
-Review the project's security/performance advisories after migration. No university records are seeded.
+Check the migration history before pushing via CLI; do not replay the same SQL under different version numbers. The hosted security advisor reported no lints after migration. The separate `supabase/tests/permissions.sql` check uses transaction-local fixtures and rolls back. It passes in the embedded SQL suite; the hosted workflow below uses actual Auth sessions and test accounts instead.
 
 ## 3. Configure Auth
 
@@ -25,7 +28,7 @@ Review the project's security/performance advisories after migration. No univers
 - Add the equivalent `/portal**` callback on the exact staging origin when testing a deployed preview. Review and tighten the callback configuration for the final deployment; do not allow arbitrary origins.
 - The PKCE verifier is stored in the requesting browser. Open confirmation/recovery links in that same browser. An invalid, expired, or missing-verifier recovery link does not grant password-reset access.
 
-The application asks Supabase to send mail only when a user submits signup or password recovery. No live mail was sent during the local fixture tests.
+The application asks Supabase to send mail when a user submits signup or recovery. No real signup confirmation or recovery email was sent during verification. Configure the callback allowlist and mail provider and verify delivery with an authorized mailbox before relying on these flows.
 
 ## 4. Set public client configuration
 
@@ -61,20 +64,17 @@ Check that exactly the intended account changed. The client has no write privile
 
 Administrative assignment uses `staff_members` records. Add real staff names through the admin form; an account connection is optional in the schema and has no public edit flow in this sprint.
 
-## 6. Verify the real end-to-end workflow
+## 6. Verify the hosted workflow
 
-Use fictional test data in the development project:
+Six development accounts were created with the server-only Supabase Auth Admin API and administratively confirmed. The global confirmation setting was not disabled. Their unique passwords are in the private, ignored `.local/ACCESOS-IMPACT.md`; the ignored machine-readable equivalent is `.local/test-accounts.json`. The fixture provisioning script refuses to reset existing users and its server credential is not required to run the portal or smoke test.
 
-1. Sign up a player and confirm the email in the same browser.
-2. Sign in, edit fields, save a draft, and reload.
-3. Publish with explicit consent.
-4. In an independent browser, sign in as a coach and find that publication.
-5. Inspect network responses: no private draft, budget, account email, or internal notes should be returned to the coach.
-6. Change the player's draft; the coach must still see the previous publication until republish.
-7. As administrator, assign staff, set Ready, and write a note. Save another player draft; Ready must remain.
-8. Withdraw; coach discovery and the public route must stop returning the publication.
-9. Request password recovery, open the actual email link, set a new password, and verify the old password fails.
-10. Review hosted database policies and advisories, then record results in the sprint notes.
+Start the configured portal with `npm start`, then run from another terminal:
+
+```bash
+node --env-file-if-exists=.env scripts/live-portal-smoke.cjs
+```
+
+The smoke test only targets this development project and fixture identities. It uses Playwright with independent contexts and the real Auth and REST endpoints, without interception or mocks. It can publish fixture profiles and create interest/meeting records; reruns reuse an existing accepted interaction. The optional `--verify-lifecycle` argument also temporarily edits, withdraws and restores the hockey fixture's publication. Do not use that option while editing the fixture manually.
 
 Published snapshots are intentionally public, including to unauthenticated API clients. Private fields are in separate tables. If IMPACT decides discovery must be restricted to approved coaches, change this policy and the publication consent before collecting real data.
 

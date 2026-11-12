@@ -31,7 +31,7 @@ The browser uses only a Supabase project URL and publishable key. A protected ac
 
 ## Verification status
 
-Final local verification: 35 tests passed, zero failed; `npm run build` succeeded in unconfigured mode. No IMPACT Supabase project is configured. Live Auth, email delivery, hosted database policies, and real cross-device behavior remain unverified. The user will provide a dedicated IMPACT development project. Unrelated connected projects were not modified.
+Development verification: **47 tests passed** and the static build succeeded with Supabase configuration. The dedicated `impact-dev` project is migrated; six fictional accounts work with real Supabase Auth. Unrelated projects were not modified. Email delivery has not been tested.
 
 ## Implemented architecture
 
@@ -54,6 +54,8 @@ Supabase's client manages session storage, refresh, and PKCE callback verificati
 | universities | Location, programs/sports arrays, athletic level, source and verification |
 | university_contacts | Private contacts linked to a university, with provenance |
 | recruitment_opportunities | Student/university/contact relationship, due date, source and verification |
+| university_catalog() | Signed-in catalog of reviewed and clearly labeled sample institutions, with no private contact data |
+| recruitment_interests / meeting_requests | Participants and administrators can read; guarded RPCs validate the actor, prior state, date and timezone |
 | media_metadata | Private metadata foundation; no shared binary storage integration yet |
 
 Programs and sports are arrays on a university for this sprint. Separate catalog tables would add complexity without a working catalog requirement. Contact/university relationships are enforced by a composite foreign key. Foreign-key and discovery-query indexes support the implemented lookups.
@@ -77,21 +79,25 @@ Database triggers record status, assignment, note, and next-action changes with 
 
 University, contact, and opportunity forms record source URL/name, verification state, last verified date, and reviewer. Reviewed data requires an HTTPS source and a non-future date. The database sets the reviewer from the authenticated identity. No real university data was generated or researched. Student suggestions show manually assigned opportunities only when both the university and opportunity are human-reviewed/verified; there is no automatic matching engine.
 
+Coach interest is separate from staff stages. A coach can express interest in a published candidate; the student can accept or decline. An accepted interest lets either participant propose a meeting. The other can accept, decline, or request another time. The database stores the instant and proposal timezone; the UI renders the instant in each browser's local timezone. In-portal notifications appear on login or when Connections is refreshed. Withdrawal blocks new discovery and retains existing participant history.
+
 ## Public intake proof of concept
 
 The inquiry form still prepares a WhatsApp message. A separate Start my profile action stores a small field allowlist in the same tab's session storage and opens the portal. After authentication, the player can explicitly add answers to empty fields, review, and save. It does not create an account or a database row anonymously, overwrite an existing profile automatically, transfer contact details into a public record, or publish without consent.
 
 ## Test evidence
 
-`npm test` ran all 35 tests successfully on Node 24: 17 browser scenarios (including the original seven), 5 domain tests, 11 SQL/PostgreSQL tests, and 2 configuration tests. Screenshots of desktop/mobile shared login were inspected. Tests exercise role tampering, signup intent, login/logout/session restoration, PKCE recovery/reset, draft/public separation, immutable local media, staff status/history, research forms, favorites, export privacy/formula protection, relationships, and RLS.
+`npm test` ran 47 tests successfully on Node 24. The suite covers the original browser regressions, authentication contracts, lifecycle, privacy, staff history, research, favorites, export, academic profiles, interests and meetings. Browser contract tests use an HTTP fixture. SQL tests run in embedded PostgreSQL. Neither requires hosted credentials.
 
-HTTP fixture tests demonstrate browser-to-adapter behavior and shared fixture state between independent contexts. They are not live Supabase tests. SQL tests execute PostgreSQL policies with test-only Auth identities; they do not verify hosted JWT validation or email delivery. A transaction/rollback SQL script is included for the future hosted smoke check.
+Separate hosted verification in independent browser contexts used the real Auth and REST APIs: three students published, a coach filtered to the academic student and saved a favorite, the student accepted interest, the coach proposed a meeting, the student accepted it, and the administrator saw both records. Meeting `45fa635a-0f88-4fab-afd1-545995fdbae8` was stored as `accepted`. The second coach could not read or change another pair's records. A separate lifecycle run confirmed that draft changes stayed private until republication, withdrawal removed discovery, and staff assignment, notes and stage survived both operations. No emails were sent.
 
-GitHub Actions installs dependencies and Chromium, runs the suite and build, and uploads results on failure. The feature-branch [run 42051908190](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190) completed successfully at commit `b5c70a6`.
+GitHub Actions installs dependencies and Chromium, runs the suite and build, and uploads results on failure. See [draft PR #6 checks](https://github.com/Vitolop1/IMPACT-Global-Agency/pull/6/checks).
 
 ## Known limitations and next work
 
-- Dedicated hosted IMPACT project, migration, public config, callback settings, email setup, and real shared workflow verification remain blocked on project selection.
+- Confirm Auth callback settings and configure/test email delivery with an authorized mailbox. The fixture accounts were confirmed administratively.
+- Review consent and discovery policy before collecting real student data. Current published snapshots are intentionally public.
+- Notifications are internal. There are no external calendar, video, or email integrations for meetings.
 - Shared binary media storage is not implemented. Local unused blobs have no automatic cleanup.
 - Admin-created profiles are managed records without account-claiming; local demo accounts are never auto-imported into Auth.
 - Saving then publishing uses separate API calls. A failed publication can leave a saved private draft while preserving the previous public snapshot.
@@ -101,6 +107,6 @@ GitHub Actions installs dependencies and Chromium, runs the suite and build, and
 
 See SUPABASE_SETUP.md, AI_USAGE.md, GITHUB_ISSUES.md, and SPRINT2_PRESENTATION.md for reproducible setup, disclosure, issue drafts, and the presentation/demo script.
 
-## Follow-up before hosted activation
+## Hardening before hosted activation
 
-A separate review normalized blank research source URLs to NULL, moved privileged RPC implementations into private with public SECURITY INVOKER wrappers, pinned the Supabase SDK version, and required mutations to confirm exactly one affected row. This prevents an RLS-filtered zero-row update from being reported as saved. All 35 local tests pass; commit 8098b69 contains these refinements. The full test suite now includes 17 browser, 11 SQL, 5 domain, and 2 configuration tests.
+A separate review normalized blank research source URLs to NULL, moved privileged RPC implementations into private with public SECURITY INVOKER wrappers, pinned the Supabase SDK version, and required mutations to confirm exactly one affected row. This prevents an RLS-filtered zero-row update from being reported as saved. Commit 8098b69 contains these refinements.

@@ -11,10 +11,10 @@ Use Node 24 (the version used for validation).
 ```bash
 npm ci
 npx playwright install chromium
-npm run demo
+npm start
 ```
 
-Open http://localhost:8000 and http://localhost:8000/portal.
+Open the [site](http://localhost:8000/) or the [portal](http://localhost:8000/portal). In the configured development checkout, test logins are in the private, ignored `.local/ACCESOS-IMPACT.md` file. Other checkouts need the public configuration below.
 
 `npm run demo` explicitly enables the local prototype. It is useful for classroom demonstrations and contains fictional sample profiles.
 
@@ -53,10 +53,12 @@ The source now includes:
 - Official Supabase Auth client integration: signup, login, logout, persistent session, forgot-password, and PKCE reset callback.
 - Protected database roles, ownership/RLS policies, private profile drafts, and allowlisted public snapshots.
 - Shared profile read/write, publication/withdrawal RPCs, coach favorites, admin pipeline/research persistence, and reviewed opportunity suggestions.
-- Versioned migration: `supabase/migrations/202611050001_sprint2.sql`.
+- Academic/cultural/exchange profiles without sports fields, a safe university catalog, and coach institution selection.
+- Coach interest, student response, in-portal inbox, and participant-controlled meeting proposals with local time display and administrator oversight.
+- Versioned schema in `supabase/migrations/`.
 - Transactional SQL smoke checks: `supabase/tests/permissions.sql`.
 
-**Connection state on November 5, 2026:** no IMPACT project has been selected/configured or migrated. The connected account currently exposes unrelated projects, which were left untouched. Browser HTTP contract tests pass, and SQL policies pass against embedded PostgreSQL. Live hosted authentication, email delivery, and real cross-browser Supabase persistence are not yet verified.
+**Development connection:** [impact-dev](https://supabase.com/dashboard/project/jbhvwpfgpnwyqzfobxcq) is migrated and connected. Six fictional Supabase Auth accounts have been provisioned. Independent browser contexts using the real service completed publication, discovery, an interest response, meeting acceptance, and administrator oversight. Email delivery is separate and has not been tested.
 
 Follow [Supabase setup](docs/SUPABASE_SETUP.md). Copy `.env.example` to an ignored `.env`, then set only:
 
@@ -84,13 +86,13 @@ npm test
 npm run build
 ```
 
-Validation on November 5, 2026: **35 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
+Validation: **47 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
 
-The SQL tests use PGlite, an embedded PostgreSQL runtime with a minimal test Auth schema. The browser Auth tests use an explicitly labeled HTTP fixture. These do not replace hosted Supabase, SMTP, or real JWT verification tests.
+The regular suite runs without cloud credentials: the SQL tests use embedded PostgreSQL (PGlite) and the Supabase browser contract tests use an HTTP fixture. The separate [hosted verification](docs/SUPABASE_SETUP.md#6-verify-the-hosted-workflow) uses real credentials and changes only development fixtures; it does not run in CI.
 
 Screenshots are written to ignored `test-results/`. `PLAYWRIGHT_MODULE_PATH` can select an existing Playwright installation.
 
-GitHub Actions is configured for pushes to `vito-dev`/`codex/**` and PRs into `vito-dev`/`main`. It installs dependencies and Chromium, runs `npm test`, builds, and uploads results on failure. [The first feature-branch run passed](https://github.com/Vitolop1/IMPACT-Global-Agency/actions/runs/42051908190) at commit `b5c70a6`.
+GitHub Actions is configured for pushes to `vito-dev`/`codex/**` and PRs into `vito-dev`/`main`. It installs dependencies and Chromium, runs `npm test`, builds, and uploads results on failure. See [checks on draft PR #6](https://github.com/Vitolop1/IMPACT-Global-Agency/pull/6/checks).
 
 ## Build and hosting
 
@@ -102,16 +104,16 @@ No production deployment is performed by this sprint. A deployment without confi
 
 ## Not yet implemented
 
-- Hosted IMPACT project activation and live Auth/RLS/email verification.
+- Live signup confirmation and recovery email delivery. The signup and PKCE recovery/reset UI were tested with an HTTP fixture; seeded accounts were confirmed administratively.
 - Shared binary media uploads, storage policies, signed playback URLs, and cleanup. In Supabase mode, upload controls are disabled with an explanation; HTTPS highlights links work through the profile model.
 - Import of local demo accounts/profiles into real accounts.
 - Claiming an administrator-created student record from a newly registered account.
-- Full recruitment automation, invitations, notifications, university-data research, or automatic matching.
+- External email notifications, calendar/video integrations, university-data research, and automatic matching.
 - Concurrent-edit conflict resolution, production monitoring, and a completed production security review.
 
 ## Next steps and class material
 
-Select the dedicated IMPACT development project, apply the migration, configure Auth callbacks/email, set public environment values, and verify a player → publication → independent coach → admin pipeline workflow against the real service.
+Review discovery consent and permissions before accepting real student data. Configure and verify email separately before a wider rollout.
 
 - [Sprint technical notes](docs/CS452_SPRINT2.md)
 - [Presentation-ready report and demo plan](docs/SPRINT2_PRESENTATION.md)
