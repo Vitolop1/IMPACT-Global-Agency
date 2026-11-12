@@ -23,12 +23,12 @@ Check the migration history before pushing via CLI; do not replay the same SQL u
 
 - Enable email/password Auth. Keep email confirmation enabled for the real workflow.
 - Configure a working mail provider and test delivery. Supabase's development email limits do not constitute a production mail setup.
-- Set the development Site URL to `http://localhost:8000`.
-- Allow callbacks on `http://localhost:8000/portal**` during local development. The recovery path is `/portal?reset=1`; the SDK can add PKCE flow parameters.
-- Add the equivalent `/portal**` callback on the exact staging origin when testing a deployed preview. Review and tighten the callback configuration for the final deployment; do not allow arbitrary origins.
+- The development Site URL is set to `http://localhost:8000` in `impact-dev`.
+- The development allowlist includes `http://localhost:8000/portal` and `http://localhost:8000/portal?reset=1`, for signup and recovery respectively.
+- Add equivalent URLs for the exact staging origin when testing a deployed preview. Keep production redirects scoped to the intended host and paths.
 - The PKCE verifier is stored in the requesting browser. Open confirmation/recovery links in that same browser. An invalid, expired, or missing-verifier recovery link does not grant password-reset access.
 
-The application asks Supabase to send mail when a user submits signup or recovery. No real signup confirmation or recovery email was sent during verification. Configure the callback allowlist and mail provider and verify delivery with an authorized mailbox before relying on these flows.
+The application asks Supabase to send mail when a user submits signup or recovery. No real signup confirmation or recovery email was sent during verification. Configure the mail provider and verify delivery with an authorized mailbox before relying on these flows.
 
 ## 4. Set public client configuration
 

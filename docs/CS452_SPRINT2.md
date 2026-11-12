@@ -95,7 +95,7 @@ GitHub Actions installs dependencies and Chromium, runs the suite and build, and
 
 ## Known limitations and next work
 
-- Confirm Auth callback settings and configure/test email delivery with an authorized mailbox. The fixture accounts were confirmed administratively.
+- Local Auth callback URLs are configured. Configure/test email delivery with an authorized mailbox. The fixture accounts were confirmed administratively.
 - Review consent and discovery policy before collecting real student data. Current published snapshots are intentionally public.
 - Notifications are internal. There are no external calendar, video, or email integrations for meetings.
 - Shared binary media storage is not implemented. Local unused blobs have no automatic cleanup.
