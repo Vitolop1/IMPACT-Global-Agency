@@ -89,6 +89,9 @@ window.createImpactBackend = config => {
     async respondInterest(id,response) { unwrap(await client.rpc('respond_to_interest',{interest_id:id,response})); },
     async proposeMeeting(id,proposal) { return unwrap(await client.rpc('propose_meeting',{interest_id:id,starts_at:proposal.starts_at,timezone:proposal.timezone,duration_minutes:Number(proposal.duration_minutes),message:proposal.message||''})); },
     async respondMeeting(id,response) { unwrap(await client.rpc('respond_to_meeting',{meeting_id:id,response})); },
+    async listUniversityRequests() { return unwrap(await client.from('university_opportunity_requests').select('id,university_id,university_name,student_name,is_sample,kind,message,status,created_at').order('created_at',{ascending:false})); },
+    async submitUniversityRequest(id,kind,message) { return unwrap(await client.rpc('submit_university_request',{university_id:id,kind,message})); },
+    async updateUniversityRequest(id,status) { unwrap(await client.rpc('update_university_request',{request_id:id,next_status:status})); },
     async saveResearch(table,data) {
       if(!['universities','university_contacts','recruitment_opportunities','staff_members'].includes(table)) throw new Error('forbidden');
       changedOne(await client.from(table).upsert(data).select('id'));

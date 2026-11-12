@@ -39,6 +39,8 @@
   let dialogProfile = null;
   let editingProfile = null;
   let connectionBusy = false;
+  let universityQueue = { account: null, rows: [], busy: false };
+  let universityTarget = null;
   let lastFeedback = new Map();
   const mediaURLs = new Map();
   const publicId = new URLSearchParams(location.search).get('perfil');
@@ -125,21 +127,23 @@
     UI.translate();
   }
   function allowedViews() {
-    return session.role === 'admin' ? ['admin', 'connections'] : session.role === 'coach' ? ['coach', 'saved', 'coachProfile', 'connections'] : ['player', 'connections'];
+    const university = backend ? ['universityRequests'] : [];
+    return session.role === 'admin' ? ['admin', 'connections', ...university] : session.role === 'coach' ? ['coach', 'saved', 'coachProfile', 'connections'] : ['player', ...university, 'connections'];
   }
   function renderSidebar() {
-    const labels = { admin: 'profiles', player: 'myProfile', coach: 'candidates', saved: 'saved', coachProfile: 'coachProfile', connections: 'connections' };
+    const labels = { admin: 'profiles', player: 'myProfile', coach: 'candidates', saved: 'saved', coachProfile: 'coachProfile', connections: 'connections', universityRequests: session.role === 'admin' ? 'universityRequestsAdminNav' : 'universityRequestsNav' };
     const pending = (state.interests || []).filter(i => i.status === 'pending' && session.role === 'player' && i.student_id === ownProfile().id).length + (state.meetings || []).filter(m => m.status === 'proposed' && m.proposed_by !== session.id && session.role !== 'admin').length;
     $('#sideMenu').innerHTML = allowedViews().map(view => `<button type="button" data-view="${view}" class="${view === currentView ? 'active' : ''}">${escape(t(labels[view]))}${view === 'connections' && pending ? `<span class="inbox-count">${pending}</span>` : ''}</button>`).join('');
   }
   function setView(view) {
     if (!session || !allowedViews().includes(view)) return;
     currentView = view;
-    for (const name of ['admin', 'player', 'coach', 'coachProfile', 'connections']) $(`#${name}Panel`).hidden = name !== (view === 'saved' ? 'coach' : view);
+    for (const name of ['admin', 'player', 'coach', 'coachProfile', 'connections', 'universityRequests']) $(`#${name}Panel`).hidden = name !== (view === 'saved' ? 'coach' : view);
     renderSidebar();
     if (view === 'coach' || view === 'saved') { refreshFilterOptions(); renderCandidates(); }
     if (view === 'admin') renderAdmin();
     if (view === 'connections') renderConnections();
+    if (view === 'universityRequests') { renderUniversityRequests(); refreshUniversityRequests(); }
   }
   function enter(account) {
     session = account;
@@ -201,6 +205,10 @@
     catch { setFeedback('#loginError', 'authFailed', true); return; }
     sessionStorage.removeItem(SESSION);
     session = null;
+    universityQueue = { account: null, rows: [], busy: false };
+    closeUniversityRequest();
+    $('#universitySearch').value = '';
+    setFeedback('#universityRequestStatus', '');
     $('#portalApp').hidden = true;
     $('#authSection').hidden = false;
     $('#loginForm').reset();
@@ -405,7 +413,9 @@
     const favorites = state.favorites[session.id] || [];
     $('#candidateList').innerHTML = profiles.length ? profiles.map(p => {
       const existing = (state.interests || []).find(i => i.student_id === p.id && i.coach_id === session.id);
-      return `<article class="candidate"><div><h3>${escape(p.name)}</h3><p>${escape([pretty(p.goal), p.sport, p.position, p.major, p.graduation].filter(Boolean).join(' · '))}</p>${p.sample ? `<span class="badge">${escape(t('sample'))}</span>` : ''}</div><div class="actions"><button class="btn btn-light" type="button" data-profile="${escape(p.id)}">${escape(t('view'))}</button><button class="btn btn-light" type="button" data-favorite="${escape(p.id)}" aria-pressed="${favorites.includes(p.id)}">${escape(t(favorites.includes(p.id) ? 'removeSaved' : 'save'))}</button>${backend ? `<button class="btn btn-primary" type="button" data-interest="${escape(p.id)}"${existing ? ' disabled' : ''}>${escape(t(existing ? 'interestSent' : 'expressInterest'))}</button>` : ''}</div></article>`;
+      const colors = ['blue','teal','rose','gold'];
+      const color = colors[[...p.id].reduce((total, ch) => total + ch.codePointAt(0), 0) % colors.length];
+      return `<article class="candidate"><div class="candidate-portrait portrait-${color}" aria-hidden="true"><svg viewBox="0 0 96 96" fill="none"><circle cx="48" cy="34" r="17" fill="currentColor"/><path d="M15 86c0-17 15-31 33-31s33 14 33 31" fill="currentColor"/></svg></div><div class="candidate-body"><p class="candidate-category">${escape(t(p.goal || 'academic'))}</p><h3>${escape(p.name)}</h3><p>${escape([p.sport, p.position, p.major, p.graduation].filter(Boolean).join(' · '))}</p>${p.sample ? `<span class="badge">${escape(t('sample'))}</span>` : ''}</div><div class="actions"><button class="btn btn-light" type="button" data-profile="${escape(p.id)}">${escape(t('view'))}</button><button class="btn btn-light" type="button" data-favorite="${escape(p.id)}" aria-pressed="${favorites.includes(p.id)}">${escape(t(favorites.includes(p.id) ? 'removeSaved' : 'save'))}</button>${backend ? `<button class="btn btn-primary" type="button" data-interest="${escape(p.id)}"${existing ? ' disabled' : ''}>${escape(t(existing ? 'interestSent' : 'expressInterest'))}</button>` : ''}</div></article>`;
     }).join('') : `<p class="empty">${escape(t('empty'))}</p>`;
   }
   $('#candidateFilters').addEventListener('submit', event => event.preventDefault());
@@ -457,6 +467,97 @@
   $('#coachUniversity').addEventListener('change', () => {
     const university = (state.catalog || []).find(u => u.id === $('#coachUniversity').value);
     if (university) $('#coachForm [name=institution]').value = university.name;
+  });
+
+  function requestUniversities() {
+    return (state.catalog || []).filter(u => !u.is_sample || session?.isSample);
+  }
+  function renderUniversityCards() {
+    const query = $('#universitySearch').value.trim().toLowerCase();
+    const cards = requestUniversities().filter(u =>
+      [u.name,u.location,...(u.programs || []),...(u.sports || [])].join(' ').toLowerCase().includes(query));
+    $('#universityCards').innerHTML = cards.map(u => {
+      const facts = [[t('major'),u.programs],[t('sport'),u.sports]]
+        .filter(([, values]) => values?.length)
+        .map(([label, values]) => `<p><strong>${escape(label)}:</strong> ${escape(values.join(', '))}</p>`).join('');
+      return `<article class="candidate university-card"><div class="candidate-body"><p class="candidate-category">${escape(u.location)}</p><h3>${escape(u.name)}</h3><span class="badge">${escape(t(u.is_sample ? 'sampleInstitution' : u.verification_status))}</span>${facts}</div><div class="actions"><button type="button" class="btn btn-primary" data-university-request="${escape(u.id)}"${universityQueue.busy ? ' disabled' : ''}>${escape(t('requestUniversity'))}</button></div></article>`;
+    }).join('') || `<p class="empty">${escape(t('noCatalogMatches'))}</p>`;
+  }
+  function renderUniversityRequests() {
+    const staff = session.role === 'admin';
+    const rows = universityQueue.account === session.id ? universityQueue.rows : [];
+    $('#universityRequestsTitle').textContent = t(staff ? 'universityRequestsAdminNav' : 'universityRequestsNav');
+    $('#universityRequestsIntro').textContent = t(staff ? 'universityRequestsStaffIntro' : 'universityRequestsIntro');
+    $('#universityRequestListTitle').textContent = t(staff ? 'universityRequestsAdminNav' : 'myUniversityRequests');
+    $('#universityCatalogSection').hidden = staff;
+    $('#refreshUniversityRequests').disabled = universityQueue.busy;
+    $('#universityRequestForm [type=submit]').disabled = universityQueue.busy;
+    if (!staff) renderUniversityCards();
+    $('#universityRequestList').innerHTML = rows.map(r => {
+      const active = ['pending','reviewing'].includes(r.status);
+      const actions = !active ? [] : staff
+        ? [...(r.status === 'pending' ? [['reviewing','startRequestReview']] : []), ['closed','closeRequest']]
+        : [['withdrawn','withdrawRequest']];
+      return `<article class="connection-card" data-university-request-id="${escape(r.id)}"><div class="connection-card-head"><h4>${escape(r.university_name)}</h4><span class="status-pill">${escape(t('universityRequest_' + r.status))}</span></div><p class="hint">${escape([staff && r.student_name,t('request_' + r.kind),r.is_sample && t('sample')].filter(Boolean).join(' · '))}</p>${r.message ? `<p class="connection-message">${escape(r.message)}</p>` : ''}<div class="actions">${actions.map(([status,label]) => `<button type="button" class="btn btn-light" data-university-status="${status}" data-id="${escape(r.id)}"${universityQueue.busy ? ' disabled' : ''}>${escape(t(label))}</button>`).join('')}</div></article>`;
+    }).join('') || `<p class="empty">${escape(t(universityQueue.busy ? 'loadingUniversityRequests' : 'noUniversityRequests'))}</p>`;
+  }
+  function closeUniversityRequest() {
+    universityTarget = null;
+    $('#universityRequestForm').hidden = true;
+    $('#universityRequestForm').reset();
+  }
+  async function refreshUniversityRequests(operation) {
+    if (!backend || !session || !allowedViews().includes('universityRequests')) return;
+    const actor = session;
+    if (universityQueue.account !== actor.id) universityQueue = { account: actor.id, rows: [], busy: false };
+    const queue = universityQueue;
+    if (queue.busy) return;
+    queue.busy = true;
+    setFeedback('#universityRequestStatus', '');
+    renderUniversityRequests();
+    let saved = false;
+    try {
+      if (operation) {
+        await operation();
+        saved = true;
+      }
+      if (session !== actor) return;
+      if (saved) closeUniversityRequest();
+      queue.rows = await backend.listUniversityRequests();
+      if (session === actor && saved) setFeedback('#universityRequestStatus','universityRequestSaved');
+    } catch (error) {
+      if (session === actor) setFeedback('#universityRequestStatus', saved ? 'universityRequestRefreshFailed' : error?.code === '23505' ? 'universityRequestDuplicate' : 'universityRequestFailed', true);
+    } finally {
+      queue.busy = false;
+      if (session === actor && currentView === 'universityRequests') renderUniversityRequests();
+    }
+  }
+  $('#universitySearch').addEventListener('input', renderUniversityCards);
+  $('#refreshUniversityRequests').addEventListener('click', () => refreshUniversityRequests());
+  $('#universityCards').addEventListener('click', event => {
+    const button = event.target.closest('[data-university-request]');
+    if (!button || universityQueue.busy) return;
+    const university = requestUniversities().find(u => u.id === button.dataset.universityRequest);
+    if (!university) return;
+    closeUniversityRequest();
+    universityTarget = university.id;
+    const form = $('#universityRequestForm');
+    form.elements.kind.value = ownProfile().goal === 'sports' ? 'tryout' : 'academic';
+    $('#universityRequestTarget').textContent = university.name;
+    form.hidden = false;
+    $('#universityRequestTarget').focus();
+  });
+  $('#closeUniversityRequest').addEventListener('click', closeUniversityRequest);
+  $('#universityRequestForm').addEventListener('submit', event => {
+    event.preventDefault();
+    if (!universityTarget || session?.role !== 'player') return;
+    const {kind,message} = profileValues(event.currentTarget);
+    const id = universityTarget;
+    refreshUniversityRequests(() => backend.submitUniversityRequest(id,kind,message));
+  });
+  $('#universityRequestList').addEventListener('click', event => {
+    const button = event.target.closest('[data-university-status]');
+    if (button) refreshUniversityRequests(() => backend.updateUniversityRequest(button.dataset.id,button.dataset.universityStatus));
   });
   function meetingTime(value) {
     const locale = { es: 'es-AR', en: 'en-US', fr: 'fr-FR', it: 'it-IT' }[UI.language] || 'en-US';
@@ -687,6 +788,7 @@
       if (currentView === 'coach' || currentView === 'saved') { refreshFilterOptions(); renderCandidates(); }
       if (currentView === 'admin') renderAdmin();
       if (currentView === 'connections') renderConnections();
+      if (currentView === 'universityRequests') renderUniversityRequests();
       if (currentView === 'player') renderMedia($('#playerMedia'), { ...ownProfile(), video: $('#profileForm [name=video]').value }, true);
     }
     if (publicId) renderPublicProfile();

@@ -34,6 +34,7 @@ These are test identifiers, not contact email addresses. Demo accounts and permi
 - Player draft/edit/publish/withdraw/preview and HTML export.
 - Separate draft and published snapshots, including immutable references to local uploaded videos.
 - Coach discovery, filters, favorites, profile viewing, and CSV export using published data only.
+- A responsive coach candidate grid with local avatar placeholders, and a signed-in university catalog where students can request a sports tryout or academic opportunity for IMPACT staff review.
 - Administrator profile editing, explicit publication/withdrawal, pipeline status, assignment, notes, dates, and history.
 - University, contact, staff, and opportunity forms with provenance and human-verification fields.
 - Optional inquiry-to-profile handoff within the same browser tab. Answers enter an authenticated form and require review/save; there is no anonymous profile-creation endpoint.
@@ -86,7 +87,7 @@ npm test
 npm run build
 ```
 
-Validation: **47 tests passed, 0 failed**. This includes the original seven browser scenarios, added browser/HTTP contract cases, domain tests, configuration checks, and SQL/RLS tests.
+Validation: **49 tests passed, 0 failed**. This includes browser coverage of the candidate grid and university request flow, plus SQL/RLS tests for request privacy and allowed status changes.
 
 The regular suite runs without cloud credentials: the SQL tests use embedded PostgreSQL (PGlite) and the Supabase browser contract tests use an HTTP fixture. The separate [hosted verification](docs/SUPABASE_SETUP.md#6-verify-the-hosted-workflow) uses real credentials and changes only development fixtures; it does not run in CI.
 

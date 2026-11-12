@@ -42,6 +42,7 @@ before(async () => {
     alter default privileges in schema public grant execute on functions to anon,authenticated;`);
   await db.exec(fs.readFileSync('supabase/migrations/202611050001_sprint2.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261110145219_recruiting_interactions_catalog.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261112191304_university_opportunity_requests.sql','utf8'));
   for (const [name, id] of Object.entries(ids)) {
     const type = name.toLowerCase().includes('coach') ? 'coach' : 'player';
     await db.query('insert into auth.users(id,email,raw_user_meta_data) values($1,$2,$3)', [id, `${name}-private@example.test`, { name: `Sample ${name}`, account_type: type }]);
@@ -57,6 +58,32 @@ before(async () => {
   await as(ids.coach, () => db.query('update coach_profiles set university_id=$1,data=$2 where user_id=$3', [reviewedUniversity, { institution: 'Untrusted client institution', name: 'Untrusted client name', email: 'private-coach@example.test' }, ids.coach]));
 });
 after(async () => db?.close());
+
+test('SQL university requests: eligible catalog, duplicate prevention and private staff workflow', async () => {
+  const submit = (actor, university, kind = 'tryout') => scalar(actor, 'select submit_university_request($1,$2,$3) as result', [university,kind,' Request for a tryout ']);
+  const advance = (actor, id, status) => as(actor, () => db.query('select update_university_request($1,$2)', [id,status]));
+  const records = actor => as(actor, () => db.query('select * from university_opportunity_requests'));
+  await assert.rejects(submit(ids.coach, reviewedUniversity), {code:'42501'});
+  await assert.rejects(submit(ids.student, hiddenUniversity), {code:'22023'});
+  await assert.rejects(submit(ids.student, sampleUniversity), {code:'22023'});
+  await db.query('update accounts set is_sample=true where id=$1', [ids.academic]);
+  const academic = await submit(ids.academic, sampleUniversity, 'academic');
+  const id = await submit(ids.student, reviewedUniversity);
+  await assert.rejects(submit(ids.student, reviewedUniversity), {code:'23505'});
+  assert.deepEqual((await records(ids.otherStudent)).rows, []);
+  assert.deepEqual((await records(ids.coach)).rows, []);
+  assert.deepEqual((await records(ids.student)).rows.map(r => [r.id,r.message,r.status]), [[id,'Request for a tryout','pending']]);
+  assert.equal((await records(ids.admin)).rows.length, 2);
+  await assert.rejects(advance(ids.otherStudent,id,'withdrawn'), {code:'42501'});
+  await assert.rejects(advance(ids.student,id,'reviewing'), {code:'42501'});
+  await assert.rejects(as(ids.student, () => db.query("update university_opportunity_requests set status='closed'")), {code:'42501'});
+  await advance(ids.admin,id,'reviewing');
+  assert.equal((await records(ids.student)).rows[0].status,'reviewing');
+  await advance(ids.student,id,'withdrawn');
+  await assert.rejects(advance(ids.admin,id,'closed'), {code:'42501'});
+  await advance(ids.admin,academic,'closed');
+  assert.equal((await records(ids.academic)).rows[0].status,'closed');
+});
 
 test('SQL interactions: academic publication does not require a sport, athletic publication does', async () => {
   const draft = { ...athlete, name: 'Sample academic student', goal: 'academic' }; delete draft.sport;

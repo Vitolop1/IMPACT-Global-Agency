@@ -10,14 +10,15 @@ Use the existing IMPACT development project. For a new environment, inspect its 
 
 ## 2. Apply and check the schema
 
-Both migrations are applied to `impact-dev`, in order. The hosted migration API assigned its own version numbers:
+These migrations are applied to `impact-dev`, in order. The hosted migration API assigned its own version numbers:
 
 | Source migration | Hosted migration |
 | --- | --- |
 | `202611050001_sprint2.sql` | `20261110195721_sprint2_initial_schema` |
 | `20261110145219_recruiting_interactions_catalog.sql` | `20261110195811_recruiting_interactions_catalog` |
+| `20261112191304_university_opportunity_requests.sql` | `20261112191702_university_opportunity_requests` |
 
-Check the migration history before pushing via CLI; do not replay the same SQL under different version numbers. The hosted security advisor reported no lints after migration. The separate `supabase/tests/permissions.sql` check uses transaction-local fixtures and rolls back. It passes in the embedded SQL suite; the hosted workflow below uses actual Auth sessions and test accounts instead.
+Check the migration history before pushing via CLI; do not replay the same SQL under different version numbers. The hosted security advisor found no issues with the requests schema; it reported that Auth leaked-password protection was disabled. The separate `supabase/tests/permissions.sql` check uses transaction-local fixtures and rolls back. It passes in the embedded SQL suite; the hosted workflow below uses actual Auth sessions and test accounts instead.
 
 ## 3. Configure Auth
 
@@ -77,6 +78,8 @@ node --env-file-if-exists=.env scripts/live-portal-smoke.cjs
 The smoke test only targets this development project and fixture identities. It uses Playwright with independent contexts and the real Auth and REST endpoints, without interception or mocks. It can publish fixture profiles and create interest/meeting records; reruns reuse an existing accepted interaction. The optional `--verify-lifecycle` argument also temporarily edits, withdraws and restores the hockey fixture's publication. Do not use that option while editing the fixture manually.
 
 Published snapshots are intentionally public, including to unauthenticated API clients. Private fields are in separate tables. If IMPACT decides discovery must be restricted to approved coaches, change this policy and the publication consent before collecting real data.
+
+University requests are private to the requesting student and IMPACT administrators. Students can request a tryout or academic opportunity from eligible catalog entries and withdraw an active request. Staff can mark it under review or close it. Fictional universities accept requests only from test accounts. Changing a status never contacts the institution or confirms a tryout.
 
 ## References reviewed
 

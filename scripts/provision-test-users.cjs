@@ -10,7 +10,7 @@ const credentialsPath = path.join(local, 'test-accounts.json');
 const definitions = [
   ['admin','admin@impact.test','Prueba · Administrador IMPACT'],
   ['player','rugby.student@impact.test','Prueba · Estudiante de Rugby'],
-  ['player','hockey.student@impact.test','Prueba · Estudiante de Hockey'],
+  ['player','hockey.student@impact.test','Sample · Hockey Student'],
   ['player','academic.student@impact.test','Prueba · Estudiante Académico'],
   ['coach','rugby.coach@impact.test','Prueba · Coach de Rugby'],
   ['coach','academic.coach@impact.test','Prueba · Coach Académico']

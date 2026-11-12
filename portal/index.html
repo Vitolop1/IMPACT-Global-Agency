@@ -115,6 +115,24 @@
               </div><button type="submit" class="btn btn-primary" data-ui="sendProposal"></button></form>
             </section>
           </section>
+          <section id="universityRequestsPanel" hidden>
+            <div class="section-head"><div><span class="eyebrow" data-ui="universityRequestsEyebrow"></span><h2 id="universityRequestsTitle" data-ui="universityRequestsNav"></h2><p id="universityRequestsIntro" class="hint"></p></div><button type="button" id="refreshUniversityRequests" class="btn btn-light" data-ui="refresh">Actualizar</button></div>
+            <p id="universityRequestStatus" class="feedback" role="status"></p>
+            <div id="universityCatalogSection" hidden>
+              <label><span data-ui="searchUniversities"></span><input id="universitySearch" type="search" data-ui-placeholder="searchUniversities"></label>
+              <div id="universityCards" class="candidate-list university-cards"></div>
+              <form id="universityRequestForm" class="meeting-proposal" hidden>
+                <h3 id="universityRequestTarget" tabindex="-1"></h3>
+                <div class="form-grid">
+                  <label><span data-ui="requestType"></span><select name="kind"><option value="tryout" data-ui="request_tryout"></option><option value="academic" data-ui="request_academic"></option></select></label>
+                  <label class="full"><span data-ui="requestMessage"></span><textarea name="message" maxlength="1000"></textarea></label>
+                </div>
+                <div class="actions"><button type="submit" class="btn btn-primary" data-ui="submitUniversityRequest"></button><button type="button" id="closeUniversityRequest" class="btn btn-light" data-ui="cancel"></button></div>
+              </form>
+            </div>
+            <h3 id="universityRequestListTitle" data-ui="myUniversityRequests"></h3>
+            <div id="universityRequestList" class="connection-list"></div>
+          </section>
         </div>
       </div>
     </div></section>

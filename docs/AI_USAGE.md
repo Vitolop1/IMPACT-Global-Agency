@@ -15,6 +15,7 @@ Codex substantially assisted or generated:
 - SQL: the versioned schema, constraints, role bootstrap, RLS policies, publication and participant RPCs, provenance validation, history triggers, and rollback smoke checks.
 - Testing/debugging: PostgreSQL/RLS tests, browser HTTP fixtures, lifecycle/media/export regressions, and a separate real Auth/API smoke test in independent browser contexts.
 - Development setup: applied migrations to the dedicated IMPACT project, provisioned fictional Auth accounts and fixtures, and verified the shared portal using only the test users' permissions.
+- Follow-up: built the coach candidate grid and the student-to-IMPACT university request flow, translated the hockey fixture, and tested owner/staff access and request transitions.
 - Documentation and Git workflow: Issue drafts, logical commit organization, CI configuration, setup instructions, sprint notes, and the presentation report.
 
 No real university facts, admissions claims, coach details, or scholarship opportunities were generated to populate the application. Fictional records occur only in labeled demos/tests; SQL test fixtures are rolled back.

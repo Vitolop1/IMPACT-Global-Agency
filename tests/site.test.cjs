@@ -203,6 +203,8 @@ test('Supabase HTTP contract: academic students publish without sport and choose
   assert.equal(fixture.data.published.get(fixture.users.get('player@example.test').user.id).data.sport,'');
   const {page:coach}=await cloudPage(t,fixture);await coach.goto(base+'/portal');await cloudLogin(coach,'coach');
   assert.equal(await coach.locator('.candidate').count(),2);
+  assert.equal(await coach.locator('#candidateList .candidate-portrait svg').count(),2);
+  assert.equal(await coach.locator('#candidateList').evaluate(el=>getComputedStyle(el).display),'grid');
   await coach.selectOption('#goalFilter','academic');assert.equal(await coach.locator('.candidate').count(),1);
   assert.match(await coach.locator('.candidate').textContent(),/Sample academic student/);
   await coach.selectOption('#goalFilter','sports');assert.equal(await coach.locator('.candidate').count(),1);
@@ -210,6 +212,33 @@ test('Supabase HTTP contract: academic students publish without sport and choose
   await coach.selectOption('#goalFilter','');await coach.selectOption('#majorFilter','Computer Science');
   assert.equal(await coach.locator('.candidate').count(),1);
   assert.match(await coach.locator('.candidate').textContent(),/Sample academic student/);
+});
+
+test('Supabase HTTP contract: student requests a university tryout and sees staff review',async t=>{
+  const fixture=supabaseFixture();
+  fixture.users.get('player@example.test').isSample=true;
+  const {page:student}=await cloudPage(t,fixture);
+  await student.goto(base+'/portal');await cloudLogin(student);
+  await student.click('[data-view=universityRequests]');
+  await student.fill('#universitySearch','north');
+  const request=student.locator('#universityCards [data-university-request]');
+  assert.equal(await request.count(),1);
+  await request.click();
+  await student.selectOption('#universityRequestForm [name=kind]','tryout');
+  await student.fill('#universityRequestForm [name=message]','I would like to try out for hockey.');
+  await clickRpc(student,'#universityRequestForm [type=submit]','submit_university_request');
+  const card=student.locator('#universityRequestList [data-university-request-id]');
+  await card.waitFor();
+  assert.match(await card.textContent(),/Sample University North.*Pendiente/);
+  const id=await card.getAttribute('data-university-request-id');
+  const {page:admin}=await cloudPage(t,fixture);
+  await admin.goto(base+'/portal');await cloudLogin(admin,'admin');
+  await admin.click('[data-view=universityRequests]');
+  await clickRpc(admin,`[data-id="${id}"][data-university-status=reviewing]`,'update_university_request');
+  await student.click('#refreshUniversityRequests');
+  await student.waitForFunction(()=>document.querySelector('#universityRequestList').textContent.includes('En revisión'));
+  await clickRpc(student,`[data-id="${id}"][data-university-status=withdrawn]`,'update_university_request');
+  await student.waitForFunction(()=>document.querySelector('#universityRequestList').textContent.includes('Retirada'));
 });
 
 test('Supabase HTTP contract: independent participants accept interest and a meeting with local timezone display',async t=>{

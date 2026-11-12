@@ -4,6 +4,7 @@ const D = require('../../portal/profile-domain.js');
 module.exports = function fixture() {
   const users = new Map();
   const data = { students: new Map(), published: new Map(), favorites: [], coach: new Map(), coachUniversities: new Map(), interests: new Map(), meetings: new Map(), universities: new Map(), requests: [] };
+  const universityRequests = [];
   const addUser = (email,role,name=`Test ${role}`) => {
     const id=randomUUID(), user={id,email,aud:'authenticated',role:'authenticated',created_at:new Date().toISOString(),app_metadata:{provider:'email'},user_metadata:{name}};
     const record={user,role,password:'testpassword1'};
@@ -54,6 +55,20 @@ module.exports = function fixture() {
         const keys=['id','name','location','programs','sports','athletic_level','verification_status','source_url','source_name','last_verified_at','is_sample'];
         return send([...data.universities.values()].filter(row=>row.is_sample||['verified','human-reviewed'].includes(row.verification_status)).map(row=>Object.fromEntries(keys.filter(key=>Object.hasOwn(row,key)).map(key=>[key,row[key]]))));
       }
+      if(name==='submit_university_request') {
+        const university=data.universities.get(body.university_id);
+        if(current.role!=='player'||!university||(university.is_sample&&!current.isSample))return send({code:'42501'},403);
+        if(universityRequests.some(r=>r.student_account_id===sub&&r.university_id===university.id&&r.kind===body.kind&&['pending','reviewing'].includes(r.status)))return send({code:'23505'},409);
+        const id=randomUUID();
+        universityRequests.unshift({id,student_account_id:sub,university_id:university.id,student_name:current.user.user_metadata.name,university_name:university.name,kind:body.kind,message:body.message,is_sample:university.is_sample,status:'pending'});
+        return send(id);
+      }
+      if(name==='update_university_request') {
+        const row=universityRequests.find(r=>r.id===body.request_id);
+        if(!row||!(current.role==='admin'||row.student_account_id===sub&&body.next_status==='withdrawn'))return send({code:'42501'},403);
+        row.status=body.next_status;
+        return send(null);
+      }
       if(name==='express_interest') {
         const student=data.students.get(body.student_id), snapshot=data.published.get(body.student_id);
         if(current.role!=='coach'||!student||!snapshot)return send({message:'Forbidden'},403);
@@ -100,7 +115,7 @@ module.exports = function fixture() {
     const eq=key=>url.searchParams.get(key)?.replace(/^eq\./,'');
     if(method==='GET') {
       let rows=[];
-      if(table==='accounts'&&current)rows=[{id:sub,display_name:current.user.user_metadata.name,role:current.role}];
+      if(table==='accounts'&&current)rows=[{id:sub,display_name:current.user.user_metadata.name,role:current.role,is_sample:!!current.isSample}];
       if(table==='published_profiles')rows=[...data.published.values()];
       if(table==='student_profiles'&&current)rows=[...data.students.values()].filter(p=>current.role==='admin'||p.owner_id===sub);
       if(table==='coach_profiles'&&current)rows=[{user_id:sub,data:data.coach.get(sub)||{},university_id:data.coachUniversities.get(sub)||null}];
@@ -108,6 +123,7 @@ module.exports = function fixture() {
       if(table==='recruitment_interests')rows=[...data.interests.values()].filter(participant);
       if(table==='meeting_requests')rows=[...data.meetings.values()].filter(row=>participant(data.interests.get(row.interest_id)));
       if(table==='universities'&&current?.role==='admin')rows=[...data.universities.values()];
+      if(table==='university_opportunity_requests'&&current)rows=universityRequests.filter(r=>current.role==='admin'||r.student_account_id===sub);
       for(const key of ['id','owner_id','user_id','coach_id'])if(eq(key))rows=rows.filter(r=>r[key]===eq(key));
       return send(request.headers().accept?.includes('vnd.pgrst.object')?rows[0]||null:rows);
     }
