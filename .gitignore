@@ -7,3 +7,5 @@ test-results/
 .env.*
 !.env.example
 dist/
+.local/
+supabase/.temp/
