@@ -14,6 +14,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/portal/portal.css">
   <script src="/assets/impact-i18n.js" defer></script>
+  <script src="/portal/profile-domain.js" defer></script>
+  <script src="/portal/runtime-config.js" defer></script>
+  <script src="/portal/backend.js" defer></script>
   <script src="/portal/portal.js" defer></script>
 </head>
 <body>
@@ -39,6 +42,7 @@
           <label><span data-ui="password">Contraseña</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128"></label>
           <p class="hint" id="passwordHelp" hidden data-ui="passwordHelp">Usá al menos 8 caracteres.</p>
           <button class="btn btn-dark" id="loginSubmit" type="submit" data-ui="login">Iniciar sesión</button><p class="feedback" id="loginError" role="alert" hidden></p>
+          <button class="auth-link" id="forgotPassword" type="button" data-ui="forgotPassword">¿Olvidaste tu contraseña?</button>
         </form>
         <p class="demo-note" data-ui="demoNote">Modo demostración · Los datos se guardan en este navegador.</p>
         <details class="demo-accounts"><summary data-ui="demoAccounts">Cuentas de prueba</summary><p><span data-ui="player">Jugador / estudiante</span>: <code>jugador@impactglobalagency.com</code></p><p><span data-ui="coach">Entrenador</span>: <code>coach@impactglobalagency.com</code></p><p><span data-ui="password">Contraseña</span>: <code>impactdemo</code></p></details>
@@ -52,24 +56,29 @@
         <div class="workspace">
           <section id="playerPanel" hidden>
             <div class="section-head"><h2 data-ui="myProfile">Mi perfil</h2><p data-ui="profileIntro">Tu información académica, deportiva y tus objetivos en un solo lugar.</p></div>
+            <button id="useIntake" type="button" class="btn btn-light" data-ui="useIntake" hidden></button>
             <form id="profileForm">
               <div class="form-grid" id="playerFields"></div>
+              <label id="preferredUniversityField" hidden><span data-ui="preferredCatalog">Universidades de interés del catálogo</span><select id="preferredUniversities" multiple size="4"></select><small class="hint" data-ui="preferredCatalogHelp"></small></label>
               <div class="media-editor">
                 <label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label>
                 <label><span data-ui="uploadVideo">Cargar video (MP4 / WebM, hasta 50 MB)</span><input id="playerVideo" type="file" accept="video/mp4,video/webm"></label><div id="playerMedia"></div>
               </div>
+              <p class="hint" id="sharedMediaNote" data-ui="sharedMediaPending" hidden></p>
               <label class="checkbox"><input id="publishConsent" type="checkbox"><span data-ui="visibility">Mostrar mi perfil en el buscador de esta demo.</span></label><p class="hint" data-ui="publishedConsent">El correo y el presupuesto quedan fuera de la vista pública.</p>
               <div class="actions"><button class="btn btn-light" type="button" id="saveDraft" data-ui="saveDraft">Guardar borrador</button><button class="btn btn-primary" type="submit" data-ui="publish">Publicar perfil en la demo</button><button class="btn btn-light" type="button" id="previewProfile" data-ui="preview">Vista previa</button><button class="btn btn-light" type="button" id="unpublish" data-ui="unpublish" hidden>Retirar publicación</button></div><p id="playerStatus" class="feedback" role="status"></p>
             </form>
+            <h3 data-ui="suggestedUniversities">Universidades posibles</h3><p class="hint" id="suggestedUniversities"></p>
           </section>
           <section id="coachPanel" hidden>
             <div class="section-head"><h2 id="coachHeading" data-ui="candidates">Candidatos</h2></div>
             <form id="candidateFilters" class="filters">
               <label class="search"><span data-ui="search">Buscar por nombre, deporte o carrera</span><input name="search" type="search" data-ui-placeholder="search"></label>
               <label><span data-ui="sport">Deporte o área</span><select name="sport" id="sportFilter"></select></label>
+              <label><span data-ui="goal">Objetivo</span><select name="goal" id="goalFilter"><option value="" data-ui="all">Todos</option><option value="sports" data-ui="sports"></option><option value="academic" data-ui="academic"></option><option value="cultural" data-ui="cultural"></option><option value="exchange" data-ui="exchange"></option></select></label>
+              <label><span data-ui="major">Carrera de interés</span><select name="major" id="majorFilter"></select></label>
               <label><span data-ui="graduation">Año de egreso</span><select name="graduation" id="yearFilter"></select></label>
               <label><span data-ui="english">Nivel de inglés</span><select name="english"><option value="" data-ui="all">Todos</option><option value="intermediate" data-ui="intermediate">Intermedio</option><option value="advanced" data-ui="advanced">Avanzado</option><option value="tested" data-ui="tested">Examen rendido</option></select></label>
-              <label><span data-ui="budget">Presupuesto anual estimado</span><select name="budget"><option value="" data-ui="all">Todos</option><option value="budget10" data-ui="budget10"></option><option value="budget20" data-ui="budget20"></option><option value="budget30" data-ui="budget30"></option><option value="budget45" data-ui="budget45"></option></select></label>
               <div class="actions"><button type="reset" class="btn btn-light" data-ui="clear">Limpiar</button><button type="button" class="btn btn-light" id="exportCandidates" data-ui="exportList">Exportar lista</button></div>
             </form><div id="candidateCount" class="hint" aria-live="polite"></div><div id="candidateList" class="candidate-list"></div>
           </section>
@@ -77,6 +86,7 @@
             <div class="section-head"><h2 data-ui="coachProfile">Perfil del entrenador</h2></div>
             <form id="coachForm"><div class="form-grid">
               <label><span data-ui="name">Nombre completo</span><input name="name" required maxlength="100"></label><label><span data-ui="institution">Universidad / institución</span><input name="institution" required maxlength="150"></label><label><span data-ui="sport">Deporte o área</span><input name="sport" required maxlength="80"></label><label><span data-ui="countries">Países de interés</span><input name="countries" maxlength="150"></label><label class="full"><span data-ui="bio">Presentación y logros</span><textarea name="bio" maxlength="2000"></textarea></label>
+              <label class="full" id="coachUniversityField" hidden><span data-ui="catalogInstitution"></span><select name="university_id" id="coachUniversity"></select><small class="hint" data-ui="catalogInstitutionHelp"></small></label>
             </div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="save">Guardar</button></div><p id="coachStatus" class="feedback" role="status"></p></form>
           </section>
           <section id="adminPanel" hidden>
@@ -85,8 +95,43 @@
             <form id="adminResourceForm" class="resource-form">
               <h3 data-ui="resources">Video y seguimiento</h3><div class="form-grid">
                 <label><span data-ui="selectProfile">Elegí un perfil para revisar</span><select name="profileId" id="adminProfile"></select></label><label><span data-ui="state">Estado</span><select name="status"><option value="review" data-ui="review"></option><option value="ready" data-ui="ready"></option></select></label><label><span data-ui="responsible">Responsable</span><select name="responsible"><option value="" data-ui="choose"></option><option>Genaro Fessia</option><option>Agustín Loprestti</option><option>Vito</option></select></label><label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label><label class="full"><span data-ui="uploadVideo">Cargar video</span><input id="adminVideoFile" type="file" accept="video/mp4,video/webm"></label>
-              </div><div id="adminMedia"></div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="saveResource">Guardar cambios</button></div><p class="feedback" id="adminStatus" role="status"></p>
+              </div><label><span data-ui="internalNotes">Notas internas</span><textarea name="notes" maxlength="10000"></textarea></label><label><span data-ui="nextAction">Próxima acción</span><input name="nextAction" type="date"></label><div id="adminMedia"></div><p id="adminSharedMediaNote" class="hint" data-ui="sharedMediaPending" hidden></p><div class="actions"><button type="submit" class="btn btn-primary" data-ui="saveResource">Guardar cambios</button><button type="button" id="adminWithdraw" class="btn btn-light" data-ui="unpublish" hidden></button></div><p class="feedback" id="adminStatus" role="status"></p>
             </form>
+            <h3 data-ui="pipelineHistory">Historial del proceso</h3><ol id="pipelineHistory" class="hint"></ol>
+            <details class="research"><summary data-ui="recruitingResearch">Universidades y oportunidades</summary><div id="researchForms"></div><div id="researchRecords"></div><p id="researchStatus" class="feedback" role="status"></p></details>
+          </section>
+          <section id="connectionsPanel" hidden>
+            <div class="section-head"><div><span class="eyebrow" data-ui="connectionsEyebrow">Conectá con oportunidades</span><h2 data-ui="connections">Intereses y reuniones</h2><p data-ui="connectionsIntro"></p></div><button type="button" id="refreshConnections" class="btn btn-light" data-ui="refresh">Actualizar</button></div>
+            <p id="connectionsMode" class="hint"></p><p id="connectionsStatus" class="feedback" role="status" aria-live="polite"></p>
+            <div class="connections-columns"><div><h3 data-ui="interests">Intereses de reclutamiento</h3><div id="interestList" class="connection-list"></div></div><div><h3 data-ui="meetings">Reuniones</h3><div id="meetingList" class="connection-list"></div></div></div>
+            <section class="meeting-proposal" id="meetingProposalSection" hidden>
+              <h3 data-ui="proposeMeeting">Proponer reunión</h3><p class="hint" data-ui="meetingProposalHelp"></p>
+              <form id="meetingProposalForm"><div class="form-grid">
+                <label class="full"><span data-ui="acceptedInterest"></span><select name="interest_id" required></select></label>
+                <label><span data-ui="meetingStarts"></span><input name="starts_at" type="datetime-local" required></label>
+                <label><span data-ui="timeZone"></span><input name="timezone" readonly required></label>
+                <label><span data-ui="meetingDuration"></span><input name="duration_minutes" type="number" min="15" max="180" step="15" value="30" required></label>
+                <label class="full"><span data-ui="meetingMessage"></span><textarea name="message" maxlength="1000"></textarea></label>
+              </div><button type="submit" class="btn btn-primary" data-ui="sendProposal"></button></form>
+            </section>
+          </section>
+          <section id="universityRequestsPanel" hidden>
+            <div class="section-head"><div><span class="eyebrow" data-ui="universityRequestsEyebrow"></span><h2 id="universityRequestsTitle" data-ui="universityRequestsNav"></h2><p id="universityRequestsIntro" class="hint"></p></div><button type="button" id="refreshUniversityRequests" class="btn btn-light" data-ui="refresh">Actualizar</button></div>
+            <p id="universityRequestStatus" class="feedback" role="status"></p>
+            <div id="universityCatalogSection" hidden>
+              <label><span data-ui="searchUniversities"></span><input id="universitySearch" type="search" data-ui-placeholder="searchUniversities"></label>
+              <div id="universityCards" class="candidate-list university-cards"></div>
+              <form id="universityRequestForm" class="meeting-proposal" hidden>
+                <h3 id="universityRequestTarget" tabindex="-1"></h3>
+                <div class="form-grid">
+                  <label><span data-ui="requestType"></span><select name="kind"><option value="tryout" data-ui="request_tryout"></option><option value="academic" data-ui="request_academic"></option></select></label>
+                  <label class="full"><span data-ui="requestMessage"></span><textarea name="message" maxlength="1000"></textarea></label>
+                </div>
+                <div class="actions"><button type="submit" class="btn btn-primary" data-ui="submitUniversityRequest"></button><button type="button" id="closeUniversityRequest" class="btn btn-light" data-ui="cancel"></button></div>
+              </form>
+            </div>
+            <h3 id="universityRequestListTitle" data-ui="myUniversityRequests"></h3>
+            <div id="universityRequestList" class="connection-list"></div>
           </section>
         </div>
       </div>

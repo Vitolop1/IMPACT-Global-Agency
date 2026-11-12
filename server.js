@@ -1,6 +1,10 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
+const { publicConfig } = require('./scripts/config.cjs');
+const { backendBundle } = require('./scripts/build.cjs');
+const config = publicConfig();
+const bundle = backendBundle();
 
 const root = __dirname;
 const port = Number(process.env.PORT || 8000);
@@ -26,6 +30,14 @@ const server = http.createServer((req, res) => {
     res.end("Bad request");
     return;
   }
+  if (urlPath === '/portal/runtime-config.js' || urlPath === '/portal/backend.js') {
+    res.writeHead(200, {'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store'});
+    res.end(urlPath.endsWith('runtime-config.js') ? `window.ImpactConfig=${JSON.stringify(config)};` : bundle);
+    return;
+  }
+  if (!/^\/(?:$|index\.html$|robots\.txt$|sitemap\.xml$|portal(?:\/|$)|assets\/)/.test(urlPath) || urlPath.split(/[\\/]/).some(segment => segment.startsWith('.'))) {
+    res.writeHead(404); res.end('Not found'); return;
+  }
   const requested = urlPath === "/" ? "/index.html" : urlPath;
   let filePath = path.normalize(path.join(root, requested));
 
@@ -34,6 +46,9 @@ const server = http.createServer((req, res) => {
     res.writeHead(403);
     res.end("Forbidden");
     return;
+  }
+  if (!/^(?:index\.html|robots\.txt|sitemap\.xml|assets[\\/].+|portal(?:[\\/](?:index\.html|portal\.(?:js|css)|profile-domain\.js))?[\\/]?)$/.test(relative)) {
+    res.writeHead(404); res.end('Not found'); return;
   }
 
   if (!path.extname(filePath)) {

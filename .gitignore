@@ -3,3 +3,9 @@ node_modules/
 *.log
 _archive/
 test-results/
+.env
+.env.*
+!.env.example
+dist/
+.local/
+supabase/.temp/

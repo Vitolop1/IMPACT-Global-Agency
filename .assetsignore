@@ -3,3 +3,8 @@ node_modules
 npm-debug.log
 tests
 test-results
+.env
+.env.*
+docs
+supabase
+scripts
