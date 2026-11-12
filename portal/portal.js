@@ -22,7 +22,7 @@
   ];
   const fields = [
     ['name', 'name', 'text', true], ['age', 'age', 'number'],
-    ['sport', 'sport', 'text', true], ['position', 'position', 'text'],
+    ['sport', 'sport', 'text'], ['position', 'position', 'text'],
     ['club', 'club', 'text'], ['goal', 'goal', ['sports', 'academic', 'cultural', 'exchange'], true],
     ['major', 'major', 'text'], ['university', 'university', 'text'],
     ['school', 'school', 'text'], ['graduation', 'graduation', 'number', true],
@@ -38,6 +38,7 @@
   let currentView = '';
   let dialogProfile = null;
   let editingProfile = null;
+  let connectionBusy = false;
   let lastFeedback = new Map();
   const mediaURLs = new Map();
   const publicId = new URLSearchParams(location.search).get('perfil');
@@ -86,9 +87,18 @@
       let control;
       if (Array.isArray(type)) control = `<select ${attrs}>${option('', t('choose'))}${type.map(v => option(v, t(v), data[name] === v)).join('')}</select>`;
       else if (type === 'textarea') control = `<textarea ${attrs} maxlength="2000">${escape(data[name])}</textarea>`;
-      else control = `<input ${attrs} type="${type}" value="${escape(data[name])}" ${type === 'number' ? (name === 'age' ? 'min="14" max="80"' : 'min="2000" max="2100"') : 'maxlength="200"'}>`;
+      else control = `<input ${attrs} type="${type}" value="${escape(data[name])}" ${type === 'number' ? (name === 'age' ? 'min="14" max="80"' : 'min="2000" max="2100"') : `maxlength="${name === 'university' ? 1000 : 200}"`}>`;
       return `<label${type === 'textarea' ? ' class="full"' : ''}><span>${escape(t(label))}</span>${control}</label>`;
     }).join('');
+    syncGoalFields(container);
+    container.querySelector('[name=goal]').addEventListener('change', () => syncGoalFields(container));
+  }
+  function syncGoalFields(container = $('#playerFields')) {
+    const sports = container.querySelector('[name=goal]').value === 'sports';
+    const sport = container.querySelector('[name=sport]');
+    sport.required = sports;
+    sport.setAttribute('aria-required', String(sports));
+    sport.placeholder = sports ? '' : t('athleticFieldsOptional');
   }
   async function passwordHash(password, salt) {
     const encoder = new TextEncoder();
@@ -115,19 +125,21 @@
     UI.translate();
   }
   function allowedViews() {
-    return session.role === 'admin' ? ['admin'] : session.role === 'coach' ? ['coach', 'saved', 'coachProfile'] : ['player'];
+    return session.role === 'admin' ? ['admin', 'connections'] : session.role === 'coach' ? ['coach', 'saved', 'coachProfile', 'connections'] : ['player', 'connections'];
   }
   function renderSidebar() {
-    const labels = { admin: 'profiles', player: 'myProfile', coach: 'candidates', saved: 'saved', coachProfile: 'coachProfile' };
-    $('#sideMenu').innerHTML = allowedViews().map(view => `<button type="button" data-view="${view}" class="${view === currentView ? 'active' : ''}">${escape(t(labels[view]))}</button>`).join('');
+    const labels = { admin: 'profiles', player: 'myProfile', coach: 'candidates', saved: 'saved', coachProfile: 'coachProfile', connections: 'connections' };
+    const pending = (state.interests || []).filter(i => i.status === 'pending' && session.role === 'player' && i.student_id === ownProfile().id).length + (state.meetings || []).filter(m => m.status === 'proposed' && m.proposed_by !== session.id && session.role !== 'admin').length;
+    $('#sideMenu').innerHTML = allowedViews().map(view => `<button type="button" data-view="${view}" class="${view === currentView ? 'active' : ''}">${escape(t(labels[view]))}${view === 'connections' && pending ? `<span class="inbox-count">${pending}</span>` : ''}</button>`).join('');
   }
   function setView(view) {
     if (!session || !allowedViews().includes(view)) return;
     currentView = view;
-    for (const name of ['admin', 'player', 'coach', 'coachProfile']) $(`#${name}Panel`).hidden = name !== (view === 'saved' ? 'coach' : view);
+    for (const name of ['admin', 'player', 'coach', 'coachProfile', 'connections']) $(`#${name}Panel`).hidden = name !== (view === 'saved' ? 'coach' : view);
     renderSidebar();
     if (view === 'coach' || view === 'saved') { refreshFilterOptions(); renderCandidates(); }
     if (view === 'admin') renderAdmin();
+    if (view === 'connections') renderConnections();
   }
   function enter(account) {
     session = account;
@@ -142,6 +154,7 @@
     $('#publishConsent').checked = Boolean(data.published);
     $('#unpublish').hidden = !data.published;
     fillForm($('#coachForm'), state.coaches[session.id] || { name: account.name });
+    renderCatalog();
     setView(allowedViews()[0]);
     renderMedia($('#playerMedia'), data, true);
     renderSuggestions();
@@ -374,7 +387,7 @@
   }
   function refreshFilterOptions() {
     const pool = state.profiles.map(Profiles.discovery).filter(Boolean);
-    for (const [selector, key] of [['#sportFilter', 'sport'], ['#yearFilter', 'graduation']]) {
+    for (const [selector, key] of [['#sportFilter', 'sport'], ['#yearFilter', 'graduation'], ['#majorFilter', 'major']]) {
       const select = $(selector); const old = select.value;
       select.innerHTML = option('', t('all')) + [...new Set(pool.map(p => p[key]).filter(Boolean))].sort().map(v => option(v, v, v === old)).join('');
     }
@@ -383,19 +396,29 @@
     const f = profileValues($('#candidateFilters'));
     const favorites = state.favorites[session.id] || [];
     const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    return state.profiles.map(Profiles.discovery).filter(p => p && (currentView !== 'saved' || favorites.includes(p.id)) && (!f.sport || p.sport === f.sport) && (!f.graduation || p.graduation === f.graduation) && (!f.english || p.english === f.english) && normalize(`${p.name} ${p.sport} ${p.major}`).includes(normalize(f.search)));
+    return state.profiles.map(Profiles.discovery).filter(p => p && (currentView !== 'saved' || favorites.includes(p.id)) && (!f.sport || p.sport === f.sport) && (!f.goal || p.goal === f.goal) && (!f.major || p.major === f.major) && (!f.graduation || p.graduation === f.graduation) && (!f.english || p.english === f.english) && normalize(`${p.name} ${p.sport} ${p.major}`).includes(normalize(f.search)));
   }
   function renderCandidates() {
     $('#coachHeading').textContent = t(currentView === 'saved' ? 'saved' : 'candidates');
     const profiles = filteredCandidates();
     $('#candidateCount').textContent = `${profiles.length} · ${t('candidates')}`;
     const favorites = state.favorites[session.id] || [];
-    $('#candidateList').innerHTML = profiles.length ? profiles.map(p => `<article class="candidate"><div><h3>${escape(p.name)}</h3><p>${escape([p.sport, p.position, p.major, p.graduation].filter(Boolean).join(' · '))}</p>${p.sample ? `<span class="badge">${escape(t('sample'))}</span>` : ''}</div><div class="actions"><button class="btn btn-light" type="button" data-profile="${escape(p.id)}">${escape(t('view'))}</button><button class="btn btn-light" type="button" data-favorite="${escape(p.id)}" aria-pressed="${favorites.includes(p.id)}">${escape(t(favorites.includes(p.id) ? 'removeSaved' : 'save'))}</button></div></article>`).join('') : `<p class="empty">${escape(t('empty'))}</p>`;
+    $('#candidateList').innerHTML = profiles.length ? profiles.map(p => {
+      const existing = (state.interests || []).find(i => i.student_id === p.id && i.coach_id === session.id);
+      return `<article class="candidate"><div><h3>${escape(p.name)}</h3><p>${escape([pretty(p.goal), p.sport, p.position, p.major, p.graduation].filter(Boolean).join(' · '))}</p>${p.sample ? `<span class="badge">${escape(t('sample'))}</span>` : ''}</div><div class="actions"><button class="btn btn-light" type="button" data-profile="${escape(p.id)}">${escape(t('view'))}</button><button class="btn btn-light" type="button" data-favorite="${escape(p.id)}" aria-pressed="${favorites.includes(p.id)}">${escape(t(favorites.includes(p.id) ? 'removeSaved' : 'save'))}</button>${backend ? `<button class="btn btn-primary" type="button" data-interest="${escape(p.id)}"${existing ? ' disabled' : ''}>${escape(t(existing ? 'interestSent' : 'expressInterest'))}</button>` : ''}</div></article>`;
+    }).join('') : `<p class="empty">${escape(t('empty'))}</p>`;
   }
   $('#candidateFilters').addEventListener('submit', event => event.preventDefault());
   $('#candidateFilters').addEventListener('input', renderCandidates);
   $('#candidateFilters').addEventListener('reset', () => setTimeout(renderCandidates, 0));
   $('#candidateList').addEventListener('click', async event => {
+    const interest = event.target.closest('[data-interest]');
+    if (interest) {
+      interest.disabled = true;
+      if (await connectionAction(() => backend.expressInterest(interest.dataset.interest, ''))) setView('connections');
+      else { interest.disabled = false; setView('connections'); }
+      return;
+    }
     const profile = event.target.closest('[data-profile]');
     if (profile) openProfile(Profiles.discovery(state.profiles.find(p => p.id === profile.dataset.profile)));
     const favorite = event.target.closest('[data-favorite]');
@@ -409,6 +432,99 @@
     event.preventDefault();
     try { await persist({ ...state, coaches: { ...state.coaches, [session.id]: profileValues(event.currentTarget) } }); setFeedback('#coachStatus', 'draftSaved'); }
     catch { setFeedback('#coachStatus', 'storageError', true); }
+  });
+  function renderCatalog(preserveSelection = false) {
+    const catalog = state.catalog || [];
+    const available = Boolean(backend && catalog.length);
+    $('#preferredUniversityField').hidden = !available;
+    $('#coachUniversityField').hidden = !available;
+    const preferences = new Set(($('#profileForm [name=university]').value || '').split(/\s*;\s*/));
+    const label = university => `${university.name}${university.is_sample ? ` · ${t('sampleInstitution')}` : ` · ${t(university.verification_status)}`}`;
+    $('#preferredUniversities').innerHTML = catalog.map(u => option(u.id, label(u), preferences.has(u.name))).join('');
+    const coach = state.coaches[session?.id] || {};
+    const selected = preserveSelection ? $('#coachUniversity').value : coach.university_id || '';
+    $('#coachUniversity').innerHTML = option('', t('choose')) + catalog.map(u => option(u.id, label(u), u.id === selected)).join('');
+  }
+  $('#preferredUniversities').addEventListener('change', () => {
+    const names = [...$('#preferredUniversities').selectedOptions].map(o => (state.catalog || []).find(u => u.id === o.value)?.name).filter(Boolean);
+    $('#profileForm [name=university]').value = names.join('; ');
+  });
+  $('#playerFields').addEventListener('input', event => {
+    if (event.target.name !== 'university') return;
+    const names = new Set(event.target.value.split(/\s*;\s*/));
+    for (const item of $('#preferredUniversities').options) item.selected = names.has((state.catalog || []).find(u => u.id === item.value)?.name);
+  });
+  $('#coachUniversity').addEventListener('change', () => {
+    const university = (state.catalog || []).find(u => u.id === $('#coachUniversity').value);
+    if (university) $('#coachForm [name=institution]').value = university.name;
+  });
+  function meetingTime(value) {
+    const locale = { es: 'es-AR', en: 'en-US', fr: 'fr-FR', it: 'it-IT' }[UI.language] || 'en-US';
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  }
+  function renderConnections() {
+    if (!session) return;
+    const interests = state.interests || [];
+    const meetings = state.meetings || [];
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    $('#connectionsMode').textContent = backend ? t('connectionsPrivacy') : t('sharedConnectionsRequired');
+    $('#refreshConnections').disabled = !backend || connectionBusy;
+    $('#interestList').innerHTML = interests.length ? interests.map(interest => {
+      const studentCanRespond = session.role === 'player' && interest.student_id === ownProfile().id && interest.status === 'pending';
+      const heading = session.role === 'player' ? interest.coach_name : session.role === 'admin' ? `${interest.student_name} ↔ ${interest.coach_name}` : interest.student_name;
+      return `<article class="connection-card" data-interest-id="${escape(interest.id)}"><div class="connection-card-head"><h4>${escape(heading)}</h4><span class="status-pill">${escape(t(`interest_${interest.status}`))}</span></div><p class="hint">${escape(interest.institution_name || '')}</p>${interest.message ? `<p class="connection-message">${escape(interest.message)}</p>` : ''}<div class="actions">${studentCanRespond ? `<button type="button" class="btn btn-primary" data-interest-response="accepted" data-id="${escape(interest.id)}">${escape(t('acceptInterest'))}</button><button type="button" class="btn btn-light" data-interest-response="declined" data-id="${escape(interest.id)}">${escape(t('decline'))}</button>` : ''}${interest.status === 'accepted' && session.role !== 'admin' ? `<button type="button" class="btn btn-light" data-plan-interest="${escape(interest.id)}">${escape(t('proposeMeeting'))}</button>` : ''}</div></article>`;
+    }).join('') : `<p class="empty">${escape(t('noInterests'))}</p>`;
+    $('#meetingList').innerHTML = meetings.length ? meetings.map(meeting => {
+      const interest = interests.find(i => i.id === meeting.interest_id);
+      const canRespond = session.role !== 'admin' && meeting.proposed_by !== session.id && meeting.status === 'proposed';
+      const canReschedule = session.role !== 'admin' && meeting.proposed_by !== session.id && meeting.status === 'accepted';
+      const active = ['proposed','accepted'].includes(meeting.status);
+      const buttons = canRespond ? [['accepted','acceptMeeting'],['declined','decline'],['reschedule_requested','requestReschedule']] : canReschedule ? [['reschedule_requested','requestReschedule']] : [];
+      if (active) buttons.push(['cancelled','cancelMeeting']);
+      return `<article class="connection-card" data-meeting-id="${escape(meeting.id)}"><div class="connection-card-head"><h4>${escape(interest ? `${interest.student_name} · ${interest.coach_name}` : t('meeting'))}</h4><span class="status-pill">${escape(t(`meeting_${meeting.status}`))}</span></div><p class="meeting-time" data-starts-at="${escape(meeting.starts_at)}">${escape(meetingTime(meeting.starts_at))}</p><p class="hint">${escape(zone)} · ${escape(meeting.duration_minutes)} ${escape(t('minutes'))}<br>${escape(t('proposedTimeZone'))}: ${escape(meeting.timezone)}</p>${meeting.message ? `<p class="connection-message">${escape(meeting.message)}</p>` : ''}<div class="actions">${buttons.map(([response,key]) => `<button type="button" class="btn ${response === 'accepted' ? 'btn-primary' : 'btn-light'}" data-meeting-response="${response}" data-id="${escape(meeting.id)}">${escape(t(key))}</button>`).join('')}</div></article>`;
+    }).join('') : `<p class="empty">${escape(t('noMeetings'))}</p>`;
+    const form = $('#meetingProposalForm');
+    const selected = form.elements.interest_id.value;
+    const accepted = interests.filter(i => i.status === 'accepted' && !meetings.some(m => m.interest_id === i.id && ['proposed','accepted'].includes(m.status)));
+    $('#meetingProposalSection').hidden = !backend || session.role === 'admin' || !accepted.length;
+    form.elements.interest_id.innerHTML = option('', t('choose')) + accepted.map(i => option(i.id, `${i.student_name} · ${i.coach_name}`, i.id === selected)).join('');
+    form.elements.timezone.value = zone;
+  }
+  async function connectionAction(operation) {
+    if (!backend || !session) { setFeedback('#connectionsStatus','sharedConnectionsRequired',true); return false; }
+    if (connectionBusy) return false;
+    connectionBusy = true;
+    $('#connectionsStatus').textContent = '';
+    $('#connectionsPanel').querySelectorAll('button').forEach(button => button.disabled = true);
+    try {
+      await operation();
+      state = await backend.load(session);
+      renderSidebar(); renderConnections();
+      if (currentView === 'coach' || currentView === 'saved') renderCandidates();
+      setFeedback('#connectionsStatus','connectionSaved');
+      return true;
+    } catch { setFeedback('#connectionsStatus','connectionFailed',true); return false; }
+    finally { connectionBusy = false; $('#connectionsPanel').querySelectorAll('button').forEach(button => button.disabled = false); }
+  }
+  $('#refreshConnections').addEventListener('click', () => connectionAction(async () => {}));
+  $('#interestList').addEventListener('click', async event => {
+    const response = event.target.closest('[data-interest-response]');
+    if (response) await connectionAction(() => backend.respondInterest(response.dataset.id, response.dataset.interestResponse));
+    const proposal = event.target.closest('[data-plan-interest]');
+    if (proposal) { $('#meetingProposalForm').elements.interest_id.value = proposal.dataset.planInterest; $('#meetingProposalSection').scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#meetingProposalForm').elements.starts_at.focus(); }
+  });
+  $('#meetingList').addEventListener('click', async event => {
+    const response = event.target.closest('[data-meeting-response]');
+    if (response) await connectionAction(() => backend.respondMeeting(response.dataset.id, response.dataset.meetingResponse));
+  });
+  $('#meetingProposalForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = profileValues(form);
+    let proposal;
+    try { proposal = Profiles.meetingProposal(values); }
+    catch { setFeedback('#connectionsStatus','meetingInvalid',true); return; }
+    if (await connectionAction(() => backend.proposeMeeting(values.interest_id, proposal))) { form.reset(); renderConnections(); }
   });
   function csv(profiles, internal) {
     const keys = ['name', 'sport', 'position', 'graduation', 'major', 'english', 'academic', 'video'];
@@ -554,7 +670,7 @@
       if (!answers || typeof answers !== 'object') return;
       const current = profileValues($('#profileForm'));
       const safe = Object.fromEntries(Profiles.editableFields.filter(k=>typeof answers[k]==='string'&&!current[k]).map(k=>[k,answers[k].slice(0,2000)]));
-      fillForm($('#profileForm'),safe); sessionStorage.removeItem('impactIntakeDraft'); $('#useIntake').hidden = true; setFeedback('#playerStatus','intakeReady');
+      fillForm($('#profileForm'),safe); syncGoalFields(); sessionStorage.removeItem('impactIntakeDraft'); $('#useIntake').hidden = true; setFeedback('#playerStatus','intakeReady');
     } catch { setFeedback('#playerStatus','storageError',true); }
   });
   function applyLanguage(lang) {
@@ -566,9 +682,11 @@
       $('#accountRole').textContent = t(session.role);
       const draft = profileValues($('#profileForm'));
       drawPlayerFields(draft);
+      renderCatalog(true);
       renderSidebar();
       if (currentView === 'coach' || currentView === 'saved') { refreshFilterOptions(); renderCandidates(); }
       if (currentView === 'admin') renderAdmin();
+      if (currentView === 'connections') renderConnections();
       if (currentView === 'player') renderMedia($('#playerMedia'), { ...ownProfile(), video: $('#profileForm [name=video]').value }, true);
     }
     if (publicId) renderPublicProfile();

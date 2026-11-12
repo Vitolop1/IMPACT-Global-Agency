@@ -36,3 +36,17 @@ test('Only administrator actions change the recruiting stage and append history'
   assert.equal(result.history[0].from, 'ready');
   assert.equal(result.history[0].actor, 'admin');
 });
+test('Academic, cultural and exchange profiles can publish without sporting fields', () => {
+  for (const goal of ['academic','cultural','exchange']) {
+    const p = D.publish({ ...draft(), goal, sport: '', position: '', club: '' });
+    assert.equal(D.discovery(p).goal, goal);
+  }
+  assert.throws(() => D.publish({ ...draft(), sport: '' }), /incompleteProfile/);
+});
+test('Meeting proposals validate future times, duration and IANA timezone', () => {
+  const values = { starts_at: '2030-06-10T15:00:00Z', timezone: 'America/New_York', duration_minutes: '30', message: '  Introductions  ' };
+  const result = D.meetingProposal(values, Date.parse('2030-06-09T00:00:00Z'));
+  assert.equal(result.starts_at, '2030-06-10T15:00:00.000Z');
+  assert.equal(result.message, 'Introductions');
+  for (const invalid of [{ starts_at: 'invalid' }, { starts_at: '2030-06-08T15:00:00Z' }, { duration_minutes: '5' }, { timezone: 'Not/A_Zone' }, { timezone: '' }]) assert.throws(() => D.meetingProposal({ ...values, ...invalid }, Date.parse('2030-06-09T00:00:00Z')), /meetingInvalid/);
+});

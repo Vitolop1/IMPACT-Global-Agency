@@ -20,9 +20,11 @@
     return { ...migrate(profile), ...project(changes, editableFields), updatedAt: new Date().toISOString() };
   }
   function validate(profile) {
-    for (const key of ['name', 'sport', 'goal', 'graduation', 'academic', 'english', 'budget']) {
+    for (const key of ['name', 'goal', 'graduation', 'academic', 'english', 'budget']) {
       if (!String(profile[key] || '').trim()) throw new Error('incompleteProfile');
     }
+    if (profile.goal === 'sports' && !String(profile.sport || '').trim()) throw new Error('incompleteProfile');
+    if (!['sports','academic','cultural','exchange'].includes(profile.goal)) throw new Error('incompleteProfile');
     const year = Number(profile.graduation);
     if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error('incompleteProfile');
     if (profile.video) {
@@ -47,5 +49,13 @@
     const event = { from: profile.status || 'new', to: changes.status, responsible: changes.responsible || '', notes: changes.notes || '', nextAction: changes.nextAction || '', actor: actor.id, at: new Date().toISOString() };
     return { ...profile, ...changes, history: [...(profile.history || []), event] };
   }
-  return { publicFields, editableFields, stages, publicSnapshot, migrate, saveDraft, publish, withdraw, discovery, updateCase };
+  function meetingProposal(values, now = Date.now()) {
+    const date = new Date(values.starts_at);
+    const duration = Number(values.duration_minutes);
+    if (!Number.isFinite(date.getTime()) || date.getTime() <= now + 5 * 60 * 1000 || !Number.isInteger(duration) || duration < 15 || duration > 180) throw new Error('meetingInvalid');
+    if (typeof values.timezone !== 'string' || !values.timezone.trim()) throw new Error('meetingInvalid');
+    try { new Intl.DateTimeFormat('en', { timeZone: values.timezone }).format(date); } catch { throw new Error('meetingInvalid'); }
+    return { starts_at: date.toISOString(), timezone: values.timezone, duration_minutes: duration, message: String(values.message || '').trim().slice(0,1000) };
+  }
+  return { publicFields, editableFields, stages, publicSnapshot, migrate, saveDraft, publish, withdraw, discovery, updateCase, meetingProposal };
 });

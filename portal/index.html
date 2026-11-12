@@ -59,6 +59,7 @@
             <button id="useIntake" type="button" class="btn btn-light" data-ui="useIntake" hidden></button>
             <form id="profileForm">
               <div class="form-grid" id="playerFields"></div>
+              <label id="preferredUniversityField" hidden><span data-ui="preferredCatalog">Universidades de interés del catálogo</span><select id="preferredUniversities" multiple size="4"></select><small class="hint" data-ui="preferredCatalogHelp"></small></label>
               <div class="media-editor">
                 <label><span data-ui="highlights">Link de highlights o portfolio</span><input name="video" type="url" placeholder="https://" maxlength="1000"></label>
                 <label><span data-ui="uploadVideo">Cargar video (MP4 / WebM, hasta 50 MB)</span><input id="playerVideo" type="file" accept="video/mp4,video/webm"></label><div id="playerMedia"></div>
@@ -74,6 +75,8 @@
             <form id="candidateFilters" class="filters">
               <label class="search"><span data-ui="search">Buscar por nombre, deporte o carrera</span><input name="search" type="search" data-ui-placeholder="search"></label>
               <label><span data-ui="sport">Deporte o área</span><select name="sport" id="sportFilter"></select></label>
+              <label><span data-ui="goal">Objetivo</span><select name="goal" id="goalFilter"><option value="" data-ui="all">Todos</option><option value="sports" data-ui="sports"></option><option value="academic" data-ui="academic"></option><option value="cultural" data-ui="cultural"></option><option value="exchange" data-ui="exchange"></option></select></label>
+              <label><span data-ui="major">Carrera de interés</span><select name="major" id="majorFilter"></select></label>
               <label><span data-ui="graduation">Año de egreso</span><select name="graduation" id="yearFilter"></select></label>
               <label><span data-ui="english">Nivel de inglés</span><select name="english"><option value="" data-ui="all">Todos</option><option value="intermediate" data-ui="intermediate">Intermedio</option><option value="advanced" data-ui="advanced">Avanzado</option><option value="tested" data-ui="tested">Examen rendido</option></select></label>
               <div class="actions"><button type="reset" class="btn btn-light" data-ui="clear">Limpiar</button><button type="button" class="btn btn-light" id="exportCandidates" data-ui="exportList">Exportar lista</button></div>
@@ -83,6 +86,7 @@
             <div class="section-head"><h2 data-ui="coachProfile">Perfil del entrenador</h2></div>
             <form id="coachForm"><div class="form-grid">
               <label><span data-ui="name">Nombre completo</span><input name="name" required maxlength="100"></label><label><span data-ui="institution">Universidad / institución</span><input name="institution" required maxlength="150"></label><label><span data-ui="sport">Deporte o área</span><input name="sport" required maxlength="80"></label><label><span data-ui="countries">Países de interés</span><input name="countries" maxlength="150"></label><label class="full"><span data-ui="bio">Presentación y logros</span><textarea name="bio" maxlength="2000"></textarea></label>
+              <label class="full" id="coachUniversityField" hidden><span data-ui="catalogInstitution"></span><select name="university_id" id="coachUniversity"></select><small class="hint" data-ui="catalogInstitutionHelp"></small></label>
             </div><div class="actions"><button type="submit" class="btn btn-primary" data-ui="save">Guardar</button></div><p id="coachStatus" class="feedback" role="status"></p></form>
           </section>
           <section id="adminPanel" hidden>
@@ -95,6 +99,21 @@
             </form>
             <h3 data-ui="pipelineHistory">Historial del proceso</h3><ol id="pipelineHistory" class="hint"></ol>
             <details class="research"><summary data-ui="recruitingResearch">Universidades y oportunidades</summary><div id="researchForms"></div><div id="researchRecords"></div><p id="researchStatus" class="feedback" role="status"></p></details>
+          </section>
+          <section id="connectionsPanel" hidden>
+            <div class="section-head"><div><span class="eyebrow" data-ui="connectionsEyebrow">Conectá con oportunidades</span><h2 data-ui="connections">Intereses y reuniones</h2><p data-ui="connectionsIntro"></p></div><button type="button" id="refreshConnections" class="btn btn-light" data-ui="refresh">Actualizar</button></div>
+            <p id="connectionsMode" class="hint"></p><p id="connectionsStatus" class="feedback" role="status" aria-live="polite"></p>
+            <div class="connections-columns"><div><h3 data-ui="interests">Intereses de reclutamiento</h3><div id="interestList" class="connection-list"></div></div><div><h3 data-ui="meetings">Reuniones</h3><div id="meetingList" class="connection-list"></div></div></div>
+            <section class="meeting-proposal" id="meetingProposalSection" hidden>
+              <h3 data-ui="proposeMeeting">Proponer reunión</h3><p class="hint" data-ui="meetingProposalHelp"></p>
+              <form id="meetingProposalForm"><div class="form-grid">
+                <label class="full"><span data-ui="acceptedInterest"></span><select name="interest_id" required></select></label>
+                <label><span data-ui="meetingStarts"></span><input name="starts_at" type="datetime-local" required></label>
+                <label><span data-ui="timeZone"></span><input name="timezone" readonly required></label>
+                <label><span data-ui="meetingDuration"></span><input name="duration_minutes" type="number" min="15" max="180" step="15" value="30" required></label>
+                <label class="full"><span data-ui="meetingMessage"></span><textarea name="message" maxlength="1000"></textarea></label>
+              </div><button type="submit" class="btn btn-primary" data-ui="sendProposal"></button></form>
+            </section>
           </section>
         </div>
       </div>
